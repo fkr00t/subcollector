@@ -33,4 +33,4 @@ Subcollector is a tool designed for passive and active subdomain enumeration. It
 2. Run the following command to install Subcollector:
 
    ```bash
-   go install github.com/fkr00t/subcollector@latest
+   go install github.com/fkr00t/subcollector/cmd/subcollector@latest
