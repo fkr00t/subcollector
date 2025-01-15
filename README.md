@@ -1,6 +1,6 @@
-# Substorm 
+# Subcollector
 
-Substorm is a tool designed for passive and active subdomain enumeration. It can be used to discover subdomains of a target domain using passive enumeration (using public APIs) or active enumeration (using brute-force with a wordlist).
+Subcollector is a tool designed for passive and active subdomain enumeration. It can be used to discover subdomains of a target domain using passive enumeration (using public APIs) or active enumeration (using brute-force with a wordlist).
 
 ## Features ✨
 
@@ -30,7 +30,7 @@ Substorm is a tool designed for passive and active subdomain enumeration. It can
 ## Installation 🛠️
 
 1. Ensure you have Go installed on your system. If not, you can download it from [here](https://golang.org/dl/).
-2. Run the following command to install Substorm:
+2. Run the following command to install Subcollector:
 
    ```bash
-   go install github.com/fkr00t/substorm@latest
+   go install github.com/fkr00t/subcollector@latest
