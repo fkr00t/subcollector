@@ -22,7 +22,7 @@ jobs:
 
       - name: Build Subcollector binary
         run: |
-          go build -o substorm ./cmd/subcollector  # Sesuaikan dengan struktur proyek Anda
+          go build -o subcollector ./cmd/subcollector  # Sesuaikan dengan struktur proyek Anda
 
       - name: List files (debug)
         run: ls -la  # Debugging: Memeriksa file yang ada di direktori
