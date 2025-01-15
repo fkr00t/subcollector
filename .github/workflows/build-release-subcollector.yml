@@ -18,11 +18,15 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.23'
+          go-version: '1.21'  # Use a valid Go version
 
       - name: Build subcollector binary
         run: |
           go build -o subcollector ./cmd/subcollector
+
+      - name: List files for debugging
+        run: ls -la
+
       - name: Upload subcollector binary to release
         uses: actions/upload-release-asset@v1
         with:
