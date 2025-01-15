@@ -1,4 +1,4 @@
-name: Build and Release subcollector
+name: Build and Release Subcollector
 
 on:
   release:
@@ -9,27 +9,30 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3  # Pastikan menggunakan versi terbaru
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v4  # Pastikan menggunakan versi terbaru
         with:
-          go-version: '1.21'
+          go-version: '1.23'  # Menggunakan Go 1.21
 
-      - name: Build subcollector binary
+      - name: Build Subcollector binary
         run: |
-          go build -o subcollector ./cmd/subcollector
+          go build -o substorm ./cmd/subcollector  # Sesuaikan dengan struktur proyek Anda
 
-      - name: Upload subcollector binary to release
+      - name: List files (debug)
+        run: ls -la  # Debugging: Memeriksa file yang ada di direktori
+
+      - name: Upload Subcollector binary to release
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./subcollector
-          asset_name: subcollector
+          asset_path: ./subcollector  # Sesuaikan dengan nama binary
+          asset_name: subcollector  # Sesuaikan dengan nama asset
           asset_content_type: application/octet-stream
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}  # Gunakan PAT jika diperlukan
