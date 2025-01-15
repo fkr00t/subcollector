@@ -254,10 +254,10 @@ func activeScan(domain string, wordlistPath string, resolvers []string, rateLimi
 
 func main() {
 	fmt.Println(`
- ▞▀▖   ▌  ▞▀▖▐            
- ▚▄ ▌ ▌▛▀▖▚▄ ▜▀ ▞▀▖▙▀▖▛▚▀▖
- ▖ ▌▌ ▌▌ ▌▖ ▌▐ ▖▌ ▌▌  ▌▐ ▌
- ▝▀ ▝▀▘▀▀ ▝▀  ▀ ▝▀ ▘  ▘▝ ▘
+      ▌        ▜▜       ▐        
+▞▀▘▌ ▌▛▀▖▞▀▖▞▀▖▐▐ ▞▀▖▞▀▖▜▀ ▞▀▖▙▀▖
+▝▀▖▌ ▌▌ ▌▌ ▖▌ ▌▐▐ ▛▀ ▌ ▖▐ ▖▌ ▌▌  
+▀▀ ▝▀▘▀▀ ▝▀ ▝▀  ▘▘▝▀▘▝▀  ▀ ▝▀ ▘  
 
  Created by fkr00t | github: https://github.com/fkr00t
 	`)
