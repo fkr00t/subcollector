@@ -31,7 +31,7 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./subcollector
+          asset_path: ./cmd/subcollector
           asset_name: subcollector
           asset_content_type: application/octet-stream
         env:
