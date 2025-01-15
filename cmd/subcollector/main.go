@@ -20,7 +20,7 @@ import (
 
 var (
 	green   = color.New(color.FgGreen).SprintFunc()
-	version = "v1.1.0" // Program version
+	version = "v1.1.1" // Program version
 )
 
 // Structure for JSON output
@@ -257,8 +257,7 @@ func main() {
       ▌        ▜▜       ▐        
 ▞▀▘▌ ▌▛▀▖▞▀▖▞▀▖▐▐ ▞▀▖▞▀▖▜▀ ▞▀▖▙▀▖
 ▝▀▖▌ ▌▌ ▌▌ ▖▌ ▌▐▐ ▛▀ ▌ ▖▐ ▖▌ ▌▌  
-▀▀ ▝▀▘▀▀ ▝▀ ▝▀  ▘▘▝▀▘▝▀  ▀ ▝▀ ▘  
-
+▀▀ ▝▀▘▀▀ ▝▀ ▝▀  ▘▘▝▀▘▝▀  ▀ ▝▀ ▘
  Created by fkr00t | github: https://github.com/fkr00t
 	`)
 
