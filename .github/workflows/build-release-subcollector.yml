@@ -18,20 +18,20 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'  # Gunakan versi Go yang valid
+          go-version: '1.21'
 
       - name: Build subcollector binary
         run: |
           go build -o subcollector ./cmd/subcollector
 
       - name: List files for debugging
-        run: ls -la  # Cetak daftar file untuk debugging
+        run: ls -la
 
       - name: Upload subcollector binary to release
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./subcollector  # File binary ada di root direktori
+          asset_path: ./subcollector
           asset_name: subcollector
           asset_content_type: application/octet-stream
         env:
