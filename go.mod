@@ -5,6 +5,7 @@ go 1.23.4
 require (
 	github.com/fatih/color v1.18.0
 	github.com/projectdiscovery/subfinder/v2 v2.6.8
+	github.com/spf13/cobra v1.8.1
 )
 
 require (
@@ -41,6 +42,7 @@ require (
 	github.com/google/uuid v1.3.1 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/hako/durafmt v0.0.0-20210316092057-3a2c319c1acd // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.17.4 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
@@ -84,6 +86,7 @@ require (
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
 	github.com/shirou/gopsutil/v3 v3.23.7 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
+	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/syndtr/goleveldb v1.0.0 // indirect
 	github.com/tidwall/btree v1.6.0 // indirect
 	github.com/tidwall/buntdb v1.3.0 // indirect
