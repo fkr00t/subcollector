@@ -23,6 +23,7 @@ jobs:
           go-version: '1.21'
 
       - name: Build subcollector binary
+        shell: bash
         run: |
           mkdir -p dist
 
