@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io"
 	"net"
@@ -16,11 +15,12 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/projectdiscovery/subfinder/v2/pkg/runner"
+	"github.com/spf13/cobra"
 )
 
 var (
 	green   = color.New(color.FgGreen).SprintFunc()
-	version = "v1.1.0" // Program version
+	version = "v1.2.0" // Program version
 )
 
 // Structure for JSON output
@@ -41,6 +41,30 @@ func cleanDomain(domain string) string {
 	domain = strings.TrimPrefix(domain, "https://")
 	domain = strings.TrimPrefix(domain, "www.")
 	return domain
+}
+
+// Load domains from file
+func loadDomains(filePath string) ([]string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var domains []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		domain := strings.TrimSpace(scanner.Text())
+		if domain != "" {
+			domains = append(domains, domain)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return domains, nil
 }
 
 // Load wordlist from file
@@ -132,7 +156,7 @@ func lookupWithResolver(domain string, resolver string) ([]string, error) {
 }
 
 // Passive scanning using subfinder
-func passiveScan(domain string) ([]string, error) {
+func passiveScan(domain string, showIP bool) ([]SubdomainResult, error) {
 	fmt.Printf("[INF] Starting passive scan for %s...\n\n", domain)
 
 	options := &runner.Options{
@@ -152,9 +176,19 @@ func passiveScan(domain string) ([]string, error) {
 		return nil, err
 	}
 
-	var subdomains []string
+	var subdomains []SubdomainResult
 	for result := range results {
-		subdomains = append(subdomains, result)
+		subdomainResult := SubdomainResult{Subdomain: result}
+
+		if showIP {
+			// Perform DNS resolution to get IP addresses
+			ips, err := net.LookupHost(result)
+			if err == nil {
+				subdomainResult.IPs = ips
+			}
+		}
+
+		subdomains = append(subdomains, subdomainResult)
 	}
 
 	return subdomains, nil
@@ -195,6 +229,23 @@ func activeScan(domain string, wordlistPath string, resolvers []string, rateLimi
 		fmt.Println("[*] Showing IP addresses for found subdomains")
 	}
 
+	// Cek apakah resolvers adalah file atau langsung alamat DNS
+	var finalResolvers []string
+	if len(resolvers) == 1 && strings.Contains(resolvers[0], ".") && !strings.Contains(resolvers[0], ",") {
+		// Jika input adalah file
+		fileResolvers, err := loadResolvers(resolvers[0])
+		if err != nil {
+			fmt.Println("[ERR] Failed to load resolvers file!")
+			return nil
+		}
+		finalResolvers = fileResolvers
+		fmt.Printf("[*] Using custom DNS resolvers from file: %v\n", finalResolvers)
+	} else {
+		// Jika input langsung alamat DNS
+		finalResolvers = resolvers
+		fmt.Printf("[*] Using custom DNS resolvers: %v\n", finalResolvers)
+	}
+
 	var results []SubdomainResult
 	var wg sync.WaitGroup
 	var mutex sync.Mutex
@@ -209,8 +260,8 @@ func activeScan(domain string, wordlistPath string, resolvers []string, rateLimi
 				var err error
 				var addresses []string
 
-				if len(resolvers) > 0 {
-					for _, resolver := range resolvers {
+				if len(finalResolvers) > 0 {
+					for _, resolver := range finalResolvers {
 						addresses, err = lookupWithResolver(subdomain, resolver)
 						if err == nil {
 							break
@@ -252,135 +303,228 @@ func activeScan(domain string, wordlistPath string, resolvers []string, rateLimi
 	return results
 }
 
-func main() {
-	fmt.Println(`
+// Save results to file
+func saveResults(output, jsonOutput, domain string, results []SubdomainResult) {
+	outputFile := output
+	if jsonOutput != "" {
+		outputFile = jsonOutput
+		if outputFile == "" {
+			outputFile = "output.json"
+		}
+	}
+
+	file, err := os.Create(outputFile)
+	if err != nil {
+		fmt.Println("[ERR] Failed to create output file!")
+		return
+	}
+	defer file.Close()
+
+	if jsonOutput != "" {
+		outputData := OutputJSON{
+			Domain:     domain,
+			Subdomains: results,
+		}
+		jsonData, err := json.MarshalIndent(outputData, "", "    ")
+		if err != nil {
+			fmt.Println("[ERR] Failed to create JSON output!")
+			return
+		}
+		file.Write(jsonData)
+		fmt.Printf("[INF] Results saved to %s (JSON format)\n", outputFile)
+	} else {
+		for _, result := range results {
+			file.WriteString(fmt.Sprintf("%s\n", result.Subdomain))
+		}
+		fmt.Printf("[INF] Results saved to %s (text format)\n", outputFile)
+	}
+}
+
+// Root command
+var rootCmd = &cobra.Command{
+	Use:   "subcollector",
+	Short: "Subdomain enumeration tool",
+	Long:  `Subcollector is a tool for enumerating subdomains using passive and active methods.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		// Display banner
+		fmt.Println(`
       ▌        ▜▜       ▐        
 ▞▀▘▌ ▌▛▀▖▞▀▖▞▀▖▐▐ ▞▀▖▞▀▖▜▀ ▞▀▖▙▀▖
 ▝▀▖▌ ▌▌ ▌▌ ▖▌ ▌▐▐ ▛▀ ▌ ▖▐ ▖▌ ▌▌  
 ▀▀ ▝▀▘▀▀ ▝▀ ▝▀  ▘▘▝▀▘▝▀  ▀ ▝▀ ▘
  Created by fkr00t | github: https://github.com/fkr00t
-	`)
+		`)
 
-	if len(os.Args) == 1 {
-		fmt.Printf("[INF] Current substorm version %s\n", version)
-		fmt.Println("[FTL] Program exiting: no input list provided")
-		return
-	}
+		// Show help if no subcommand is provided
+		cmd.Help()
+	},
+}
 
-	domain := flag.String("d", "", "Target domain (e.g., example.com)")
-	active := flag.Bool("active", false, "Enable active scanning")
-	wordlist := flag.String("w", "", "Path to custom wordlist file (optional)")
-	resolversFile := flag.String("r", "", "Path to custom DNS resolvers file")
-	rateLimit := flag.Int("rl", 100, "Rate limit in milliseconds (default: 100)")
-	recursive := flag.Bool("recursive", false, "Enable recursive enumeration")
-	jsonOutput := flag.String("oJ", "", "Save results in JSON format (default: output.json)")
-	output := flag.String("o", "", "Output results to file")
-	showVersion := flag.Bool("version", false, "Show program version")
-	showIP := flag.Bool("show-ip", false, "Show IP addresses for found subdomains")
-	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", os.Args[0])
-		fmt.Println("Options:")
-		fmt.Println("  -d string")
-		fmt.Println("        Target domain (e.g., example.com)")
-		fmt.Println("  -active")
-		fmt.Println("        Enable active scanning")
-		fmt.Println("  -w string")
-		fmt.Println("        Path to custom wordlist file (optional)")
-		fmt.Println("  -r string")
-		fmt.Println("        Path to custom DNS resolvers file")
-		fmt.Println("  -rl int")
-		fmt.Println("        Rate limit in milliseconds (default: 100)")
-		fmt.Println("  -recursive")
-		fmt.Println("        Enable recursive enumeration")
-		fmt.Println("  -oJ string")
-		fmt.Println("        Save results in JSON format (default: output.json)")
-		fmt.Println("  -o string")
-		fmt.Println("        Output results to file")
-		fmt.Println("  -show-ip")
-		fmt.Println("        Show IP addresses for found subdomains")
-		fmt.Println("  -version")
-		fmt.Println("        Show program version")
-	}
-	flag.Parse()
+// Passive command
+var passiveCmd = &cobra.Command{
+	Use:   "passive",
+	Short: "Perform passive subdomain enumeration",
+	Long:  `Perform passive subdomain enumeration using public data sources.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		// Display banner
+		fmt.Println(`
+      ▌        ▜▜       ▐        
+▞▀▘▌ ▌▛▀▖▞▀▖▞▀▖▐▐ ▞▀▖▞▀▖▜▀ ▞▀▖▙▀▖
+▝▀▖▌ ▌▌ ▌▌ ▖▌ ▌▐▐ ▛▀ ▌ ▖▐ ▖▌ ▌▌  
+▀▀ ▝▀▘▀▀ ▝▀ ▝▀  ▘▘▝▀▘▝▀  ▀ ▝▀ ▘
+ Created by fkr00t | github: https://github.com/fkr00t
+		`)
 
-	if *showVersion {
-		fmt.Printf("[INF] Current substorm version %s\n", version)
-		return
-	}
+		// Check if domain or domain list is provided
+		domain, _ := cmd.Flags().GetString("domain")
+		domainList, _ := cmd.Flags().GetString("list")
 
-	if *domain == "" {
-		flag.Usage()
-		return
-	}
-
-	cleanedDomain := cleanDomain(*domain)
-	fmt.Printf("[INF] Processing domain: %s\n", cleanedDomain)
-
-	var resolvers []string
-	if *resolversFile != "" {
-		var err error
-		resolvers, err = loadResolvers(*resolversFile)
-		if err != nil {
-			fmt.Println("[ERR] Failed to load resolvers file!")
-			return
-		}
-		fmt.Printf("[INF] Using custom DNS resolvers: %v\n", resolvers)
-	}
-
-	var results []SubdomainResult
-	if *active {
-		results = activeScan(cleanedDomain, *wordlist, resolvers, *rateLimit, *recursive, *showIP)
-	} else {
-		subdomains, err := passiveScan(cleanedDomain)
-		if err != nil {
-			fmt.Println("[ERR]", err)
-			return
-		}
-		for _, subdomain := range subdomains {
-			results = append(results, SubdomainResult{Subdomain: subdomain})
-		}
-
-		fmt.Println("\n[INF] Enumeration results:")
-		for _, result := range results {
-			fmt.Println(result.Subdomain)
-		}
-	}
-
-	if *jsonOutput != "" || *output != "" {
-		outputFile := *output
-		if *jsonOutput != "" {
-			outputFile = *jsonOutput
-			if outputFile == "" {
-				outputFile = "output.json"
-			}
-		}
-
-		file, err := os.Create(outputFile)
-		if err != nil {
-			fmt.Println("[ERR] Failed to create output file!")
-			return
-		}
-		defer file.Close()
-
-		if *jsonOutput != "" {
-			outputData := OutputJSON{
-				Domain:     cleanedDomain,
-				Subdomains: results,
-			}
-			jsonData, err := json.MarshalIndent(outputData, "", "    ")
+		var domains []string
+		if domainList != "" {
+			// Load domains from file
+			var err error
+			domains, err = loadDomains(domainList)
 			if err != nil {
-				fmt.Println("[ERR] Failed to create JSON output!")
+				fmt.Printf("[ERR] Failed to load domain list: %v\n", err)
 				return
 			}
-			file.Write(jsonData)
-			fmt.Printf("[INF] Results saved to %s (JSON format)\n", outputFile)
+		} else if domain != "" {
+			// Use single domain
+			domains = []string{domain}
 		} else {
-			for _, result := range results {
-				file.WriteString(fmt.Sprintf("%s\n", result.Subdomain))
-			}
-			fmt.Printf("[INF] Results saved to %s (text format)\n", outputFile)
+			// No domain provided
+			fmt.Println("[ERR] Domain or domain list is required for passive enumeration.")
+			cmd.Help()
+			return
 		}
-	}
 
-	fmt.Println("\n[INF] Scanning completed.")
+		// Process each domain
+		for _, domain := range domains {
+			cleanedDomain := cleanDomain(domain)
+			fmt.Printf("[INF] Processing domain: %s\n", cleanedDomain)
+
+			showIP, _ := cmd.Flags().GetBool("show-ip")
+			output, _ := cmd.Flags().GetString("output")
+			jsonOutput, _ := cmd.Flags().GetString("json-output")
+
+			results, err := passiveScan(cleanedDomain, showIP)
+			if err != nil {
+				fmt.Println("[ERR]", err)
+				continue
+			}
+
+			fmt.Println("\n[INF] Enumeration results:")
+			for _, result := range results {
+				if showIP && len(result.IPs) > 0 {
+					fmt.Printf("%s (IP: %v)\n", result.Subdomain, result.IPs)
+				} else {
+					fmt.Println(result.Subdomain)
+				}
+			}
+
+			if output != "" || jsonOutput != "" {
+				saveResults(output, jsonOutput, cleanedDomain, results)
+			}
+		}
+	},
+}
+
+// Active command
+var activeCmd = &cobra.Command{
+	Use:   "active",
+	Short: "Perform active subdomain enumeration",
+	Long:  `Perform active subdomain enumeration using brute-forcing and DNS resolution.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		// Display banner
+		fmt.Println(`
+      ▌        ▜▜       ▐        
+▞▀▘▌ ▌▛▀▖▞▀▖▞▀▖▐▐ ▞▀▖▞▀▖▜▀ ▞▀▖▙▀▖
+▝▀▖▌ ▌▌ ▌▌ ▖▌ ▌▐▐ ▛▀ ▌ ▖▐ ▖▌ ▌▌  
+▀▀ ▝▀▘▀▀ ▝▀ ▝▀  ▘▘▝▀▘▝▀  ▀ ▝▀ ▘
+ Created by fkr00t | github: https://github.com/fkr00t
+		`)
+
+		// Check if domain or domain list is provided
+		domain, _ := cmd.Flags().GetString("domain")
+		domainList, _ := cmd.Flags().GetString("list")
+
+		var domains []string
+		if domainList != "" {
+			// Load domains from file
+			var err error
+			domains, err = loadDomains(domainList)
+			if err != nil {
+				fmt.Printf("[ERR] Failed to load domain list: %v\n", err)
+				return
+			}
+		} else if domain != "" {
+			// Use single domain
+			domains = []string{domain}
+		} else {
+			// No domain provided
+			fmt.Println("[ERR] Domain or domain list is required for active enumeration.")
+			cmd.Help()
+			return
+		}
+
+		// Process each domain
+		for _, domain := range domains {
+			cleanedDomain := cleanDomain(domain)
+			fmt.Printf("[INF] Processing domain: %s\n", cleanedDomain)
+
+			wordlist, _ := cmd.Flags().GetString("wordlist")
+			resolvers, _ := cmd.Flags().GetStringSlice("resolvers")
+			rateLimit, _ := cmd.Flags().GetInt("rate-limit")
+			recursive, _ := cmd.Flags().GetBool("recursive")
+			showIP, _ := cmd.Flags().GetBool("show-ip")
+			output, _ := cmd.Flags().GetString("output")
+			jsonOutput, _ := cmd.Flags().GetString("json-output")
+
+			results := activeScan(cleanedDomain, wordlist, resolvers, rateLimit, recursive, showIP)
+
+			if output != "" || jsonOutput != "" {
+				saveResults(output, jsonOutput, cleanedDomain, results)
+			}
+		}
+	},
+}
+
+func init() {
+	// Add subcommands in the desired order
+	rootCmd.AddCommand(activeCmd)
+	rootCmd.AddCommand(passiveCmd)
+
+	// Disable the default help command
+	rootCmd.SetHelpCommand(&cobra.Command{
+		Use:    "no-help", // This command will not be shown
+		Hidden: true,      // Hide the command from help/usage
+	})
+
+	// Remove the completion command
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
+
+	// Flags for passive command
+	passiveCmd.Flags().StringP("domain", "d", "", "Target domain (e.g., example.com)")
+	passiveCmd.Flags().StringP("list", "l", "", "Path to file containing list of domains")
+	//passiveCmd.Flags().BoolP("show-ip", "s", false, "Show IP addresses for found subdomains")
+	passiveCmd.Flags().StringP("output", "o", "", "Output results to file (text format)")
+	passiveCmd.Flags().StringP("json-output", "j", "", "Save results in JSON format")
+
+	// Flags for active command
+	activeCmd.Flags().StringP("domain", "d", "", "Target domain (e.g., example.com)")
+	activeCmd.Flags().StringP("list", "l", "", "Path to file containing list of domains")
+	activeCmd.Flags().StringP("wordlist", "w", "", "Path to custom wordlist file")
+	activeCmd.Flags().StringSliceP("resolvers", "r", []string{}, "Custom DNS resolvers (e.g., 8.8.8.8,1.1.1.1 or path to a file)")
+	activeCmd.Flags().IntP("rate-limit", "t", 100, "Rate limit in milliseconds")
+	activeCmd.Flags().BoolP("recursive", "R", false, "Enable recursive enumeration")
+	activeCmd.Flags().BoolP("show-ip", "s", false, "Show IP addresses for found subdomains")
+	activeCmd.Flags().StringP("output", "o", "", "Output results to file (text format)")
+	activeCmd.Flags().StringP("json-output", "j", "", "Save results in JSON format")
+}
+
+func main() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
