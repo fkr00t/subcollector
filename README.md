@@ -14,19 +14,34 @@ Subcollector is a tool designed for passive and active subdomain enumeration. It
 
 ## Options
 
-| Option              | Description                                                                 |
-|---------------------|-----------------------------------------------------------------------------|
-| `-d`                | Target domain (e.g., example.com)                                           |
-| `-active`           | Enable active enumeration                                                  |
-| `-w`                | Path to custom wordlist file (optional)                                     |
-| `-r`                | Path to custom DNS resolvers file                                           |
-| `-rl`               | Rate limit in milliseconds (default: 100)                                   |
-| `-recursive`        | Enable recursive enumeration                                               |
-| `-oJ`               | Save results in JSON format (default: output.json)                          |
-| `-o`                | Save results to file                                                        |
-| `-show-ip`          | Display IP addresses for found subdomains                                   |
-| `-version`          | Display program version                                                     |
+| Option                | Description                                                    |
+|-----------------------|----------------------------------------------------------------|
+| `-d`, `--domain`      | Target domain (e.g., example.com)                              |
+| `-l`, `--list`        | Path to file containing list of domains                        |
+| `-w`, `--wordlist`    | Path to custom wordlist file (optional)                        |
+| `-r`, `--resolvers`   | Custom DNS resolvers (e.g., 8.8.8.8,1.1.1.1 or path to a file) |
+| `-t`, `--rate-limit`  | Rate limit in milliseconds (default: 100)                      |
+| `-R`, `-recursive`    | Enable recursive enumeration                                   |
+| `-s`, `--show-ip`     | Show IP addresses for found subdomains                         |
+| `-o`, `--output`      | Output results to file (text format)                           |
+| `-j`, `--json-output` | Save results in JSON format (default: output.json)             |
+| `-h`, `--help`        | Show help message                                              |
+| `-v`, `--version`     | Display program version                                        |
 
+## Example
+1. Basic Passive Enumeration
+   ```bash
+   subcollector passive -d example.com
+   ```
+2. Basic Active Enumeration
+   ```bash
+   subcollector active -d example.com
+   ```
+3. Active Enumeration with Custom Wordlist and Resolver
+   ```bash
+   subcollector active -d example.com -w wordlist.txt -r resolvers.txt -t 200 -R -s
+   ```
+   
 ## Installation 🛠️
 
 1. Ensure you have Go installed on your system. If not, you can download it from [here](https://golang.org/dl/).
