@@ -20,7 +20,10 @@ import (
 
 var (
 	green   = color.New(color.FgGreen).SprintFunc()
-	version = "v1.2.0" // Program version
+	blue    = color.New(color.FgBlue).SprintFunc()
+	magenta = color.New(color.FgMagenta).SprintFunc()
+	yellow  = color.New(color.FgYellow).SprintFunc()
+	version = "v1.2.1" // Installed version
 )
 
 // Structure for JSON output
@@ -32,6 +35,43 @@ type SubdomainResult struct {
 type OutputJSON struct {
 	Domain     string            `json:"domain"`
 	Subdomains []SubdomainResult `json:"subdomains"`
+}
+
+// Function to fetch the latest release version from GitHub
+func getLatestVersion() (string, error) {
+	url := "https://api.github.com/repos/fkr00t/subcollector/releases/latest"
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", fmt.Errorf("failed to fetch latest version: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("failed to fetch latest version: status code %d", resp.StatusCode)
+	}
+
+	var release struct {
+		TagName string `json:"tag_name"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+		return "", fmt.Errorf("failed to decode release data: %v", err)
+	}
+
+	return release.TagName, nil
+}
+
+// Function to check if the installed version is outdated
+func checkForUpdates() {
+	latestVersion, err := getLatestVersion()
+	if err != nil {
+		fmt.Printf("[ERR] Failed to check for updates: %v\n", err)
+		return
+	}
+
+	if latestVersion != version {
+		fmt.Printf("[WARN] Outdated version! Current: %s, Latest: %s\n", version, latestVersion)
+		fmt.Printf("[INF] To update, run: go install github.com/fkr00t/subcollector@latest\n\n")
+	}
 }
 
 // Clean domain from http:// or https://
@@ -131,7 +171,7 @@ func loadResolvers(filePath string) ([]string, error) {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		resolver := strings.TrimSpace(scanner.Text())
-		if resolver != "" && !strings.HasPrefix(resolver, "#") { // Ignore empty lines and comments
+		if resolver != "" && !strings.HasPrefix(resolver, "#") { // Ignore comments
 			resolvers = append(resolvers, resolver)
 		}
 	}
@@ -229,10 +269,10 @@ func activeScan(domain string, wordlistPath string, resolvers []string, rateLimi
 		fmt.Println("[*] Showing IP addresses for found subdomains")
 	}
 
-	// Cek apakah resolvers adalah file atau langsung alamat DNS
+	// Check if resolvers is a file or direct DNS addresses
 	var finalResolvers []string
 	if len(resolvers) == 1 && strings.Contains(resolvers[0], ".") && !strings.Contains(resolvers[0], ",") {
-		// Jika input adalah file
+		// If input is a file
 		fileResolvers, err := loadResolvers(resolvers[0])
 		if err != nil {
 			fmt.Println("[ERR] Failed to load resolvers file!")
@@ -241,7 +281,7 @@ func activeScan(domain string, wordlistPath string, resolvers []string, rateLimi
 		finalResolvers = fileResolvers
 		fmt.Printf("[*] Using custom DNS resolvers from file: %v\n", finalResolvers)
 	} else {
-		// Jika input langsung alamat DNS
+		// If input is direct DNS addresses
 		finalResolvers = resolvers
 		fmt.Printf("[*] Using custom DNS resolvers: %v\n", finalResolvers)
 	}
@@ -340,20 +380,56 @@ func saveResults(output, jsonOutput, domain string, results []SubdomainResult) {
 	}
 }
 
+// Function to display version
+func showVersion() {
+	fmt.Printf("Subcollector version: %s\n", version)
+}
+
+// Function to display colored banner
+func printBanner() {
+	banner := `
+      ▌        ▜▜       ▐        
+▞▀▘▌ ▌▛▀▖▞▀▖▞▀▖▐▐ ▞▀▖▞▀▖▜▀ ▞▀▖▙▀▖
+▝▀▖▌ ▌▌ ▌▌ ▖▌ ▌▐▐ ▛▀ ▌ ▖▐ ▖▌ ▌▌  
+▀▀ ▝▀▘▀▀ ▝▀ ▝▀  ▘▘▝▀▘▝▀  ▀ ▝▀ ▘
+ Created by fkr00t | github: https://github.com/fkr00t
+	`
+
+	// Split banner into lines
+	lines := strings.Split(banner, "\n")
+
+	// Apply colors to each line
+	for i, line := range lines {
+		switch i {
+		case 1, 2, 3, 4:
+			fmt.Println(blue(line)) // Lines 1-4 in blue
+		case 5:
+			fmt.Println(magenta(line)) // Line 5 in magenta
+		case 6:
+			fmt.Println(yellow(line)) // Line 6 in yellow
+		default:
+			fmt.Println(line) // Other lines without color
+		}
+	}
+}
+
 // Root command
 var rootCmd = &cobra.Command{
 	Use:   "subcollector",
 	Short: "Subdomain enumeration tool",
 	Long:  `Subcollector is a tool for enumerating subdomains using passive and active methods.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Display banner
-		fmt.Println(`
-      ▌        ▜▜       ▐        
-▞▀▘▌ ▌▛▀▖▞▀▖▞▀▖▐▐ ▞▀▖▞▀▖▜▀ ▞▀▖▙▀▖
-▝▀▖▌ ▌▌ ▌▌ ▖▌ ▌▐▐ ▛▀ ▌ ▖▐ ▖▌ ▌▌  
-▀▀ ▝▀▘▀▀ ▝▀ ▝▀  ▘▘▝▀▘▝▀  ▀ ▝▀ ▘
- Created by fkr00t | github: https://github.com/fkr00t
-		`)
+		// Check if version flag is set
+		if showVersionFlag, _ := cmd.Flags().GetBool("version"); showVersionFlag {
+			showVersion()
+			return
+		}
+
+		// Display colored banner
+		printBanner()
+
+		// Check for updates
+		checkForUpdates()
 
 		// Show help if no subcommand is provided
 		cmd.Help()
@@ -366,14 +442,17 @@ var passiveCmd = &cobra.Command{
 	Short: "Perform passive subdomain enumeration",
 	Long:  `Perform passive subdomain enumeration using public data sources.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Display banner
-		fmt.Println(`
-      ▌        ▜▜       ▐        
-▞▀▘▌ ▌▛▀▖▞▀▖▞▀▖▐▐ ▞▀▖▞▀▖▜▀ ▞▀▖▙▀▖
-▝▀▖▌ ▌▌ ▌▌ ▖▌ ▌▐▐ ▛▀ ▌ ▖▐ ▖▌ ▌▌  
-▀▀ ▝▀▘▀▀ ▝▀ ▝▀  ▘▘▝▀▘▝▀  ▀ ▝▀ ▘
- Created by fkr00t | github: https://github.com/fkr00t
-		`)
+		// Check if version flag is set
+		if showVersionFlag, _ := cmd.Flags().GetBool("version"); showVersionFlag {
+			showVersion()
+			return
+		}
+
+		// Display colored banner
+		printBanner()
+
+		// Check for updates
+		checkForUpdates()
 
 		// Check if domain or domain list is provided
 		domain, _ := cmd.Flags().GetString("domain")
@@ -435,14 +514,17 @@ var activeCmd = &cobra.Command{
 	Short: "Perform active subdomain enumeration",
 	Long:  `Perform active subdomain enumeration using brute-forcing and DNS resolution.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Display banner
-		fmt.Println(`
-      ▌        ▜▜       ▐        
-▞▀▘▌ ▌▛▀▖▞▀▖▞▀▖▐▐ ▞▀▖▞▀▖▜▀ ▞▀▖▙▀▖
-▝▀▖▌ ▌▌ ▌▌ ▖▌ ▌▐▐ ▛▀ ▌ ▖▐ ▖▌ ▌▌  
-▀▀ ▝▀▘▀▀ ▝▀ ▝▀  ▘▘▝▀▘▝▀  ▀ ▝▀ ▘
- Created by fkr00t | github: https://github.com/fkr00t
-		`)
+		// Check if version flag is set
+		if showVersionFlag, _ := cmd.Flags().GetBool("version"); showVersionFlag {
+			showVersion()
+			return
+		}
+
+		// Display colored banner
+		printBanner()
+
+		// Check for updates
+		checkForUpdates()
 
 		// Check if domain or domain list is provided
 		domain, _ := cmd.Flags().GetString("domain")
@@ -503,10 +585,18 @@ func init() {
 	// Remove the completion command
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
+	// Add version flag to root command
+	rootCmd.PersistentFlags().BoolP("version", "v", false, "Show version information")
+
+	// Add version flag to passive command
+	passiveCmd.Flags().BoolP("version", "v", false, "Show version information")
+
+	// Add version flag to active command
+	activeCmd.Flags().BoolP("version", "v", false, "Show version information")
+
 	// Flags for passive command
 	passiveCmd.Flags().StringP("domain", "d", "", "Target domain (e.g., example.com)")
 	passiveCmd.Flags().StringP("list", "l", "", "Path to file containing list of domains")
-	//passiveCmd.Flags().BoolP("show-ip", "s", false, "Show IP addresses for found subdomains")
 	passiveCmd.Flags().StringP("output", "o", "", "Output results to file (text format)")
 	passiveCmd.Flags().StringP("json-output", "j", "", "Save results in JSON format")
 
