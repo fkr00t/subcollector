@@ -22,19 +22,21 @@ jobs:
         with:
           go-version: '1.21'
 
+      - name: Determine binary name
+        id: set-binary-name
+        run: |
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            echo "BINARY_NAME=subcollector-windows-amd64.exe" >> $GITHUB_ENV
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            echo "BINARY_NAME=subcollector-darwin-amd64" >> $GITHUB_ENV
+          else
+            echo "BINARY_NAME=subcollector-linux-amd64" >> $GITHUB_ENV
+          fi
+
       - name: Build subcollector binary
         shell: bash
         run: |
           mkdir -p dist
-
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            BINARY_NAME="subcollector-windows-amd64.exe"
-          elif [[ "${{ runner.os }}" == "macOS" ]]; then
-            BINARY_NAME="subcollector-darwin-amd64"
-          else
-            BINARY_NAME="subcollector-linux-amd64"
-          fi
-
           go build -o dist/$BINARY_NAME ./cmd/subcollector
 
       - name: List files for debugging
@@ -44,8 +46,8 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: dist/$BINARY_NAME
-          asset_name: $BINARY_NAME
+          asset_path: dist/${{ env.BINARY_NAME }}
+          asset_name: ${{ env.BINARY_NAME }}
           asset_content_type: application/octet-stream
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
