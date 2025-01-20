@@ -1,4 +1,4 @@
-name: Build and Release subcollector
+name: Release subcollector
 
 on:
   release:
@@ -24,6 +24,7 @@ jobs:
 
       - name: Determine binary name
         id: set-binary-name
+        shell: bash
         run: |
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             echo "BINARY_NAME=subcollector-windows-amd64.exe" >> $GITHUB_ENV
@@ -40,6 +41,7 @@ jobs:
           go build -o dist/$BINARY_NAME ./cmd/subcollector
 
       - name: List files for debugging
+        shell: bash
         run: ls -la dist
 
       - name: Upload subcollector binary to release
