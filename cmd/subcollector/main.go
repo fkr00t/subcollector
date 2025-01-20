@@ -37,43 +37,6 @@ type OutputJSON struct {
 	Subdomains []SubdomainResult `json:"subdomains"`
 }
 
-// Function to fetch the latest release version from GitHub
-func getLatestVersion() (string, error) {
-	url := "https://api.github.com/repos/fkr00t/subcollector/releases/latest"
-	resp, err := http.Get(url)
-	if err != nil {
-		return "", fmt.Errorf("failed to fetch latest version: %v", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("failed to fetch latest version: status code %d", resp.StatusCode)
-	}
-
-	var release struct {
-		TagName string `json:"tag_name"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
-		return "", fmt.Errorf("failed to decode release data: %v", err)
-	}
-
-	return release.TagName, nil
-}
-
-// Function to check if the installed version is outdated
-func checkForUpdates() {
-	latestVersion, err := getLatestVersion()
-	if err != nil {
-		fmt.Printf("[ERR] Failed to check for updates: %v\n", err)
-		return
-	}
-
-	if latestVersion != version {
-		fmt.Printf("[WARN] Outdated version! Current: %s, Latest: %s\n", version, latestVersion)
-		fmt.Printf("[INF] To update, run: go install github.com/fkr00t/subcollector@latest\n\n")
-	}
-}
-
 // Clean domain from http:// or https://
 func cleanDomain(domain string) string {
 	domain = strings.TrimSpace(domain)
@@ -257,7 +220,8 @@ func activeScan(domain string, wordlistPath string, resolvers []string, rateLimi
 		fmt.Printf("[*] Using custom wordlist: %s\n", wordlistPath)
 	}
 
-	if rateLimit > 0 {
+	// Hanya tampilkan pemberitahuan rate limit jika diatur oleh pengguna (bukan default)
+	if rateLimit != 100 { // 100 adalah nilai default
 		fmt.Printf("[*] Rate limit set to %d ms\n", rateLimit)
 	}
 
@@ -280,7 +244,7 @@ func activeScan(domain string, wordlistPath string, resolvers []string, rateLimi
 		}
 		finalResolvers = fileResolvers
 		fmt.Printf("[*] Using custom DNS resolvers from file: %v\n", finalResolvers)
-	} else {
+	} else if len(resolvers) > 0 {
 		// If input is direct DNS addresses
 		finalResolvers = resolvers
 		fmt.Printf("[*] Using custom DNS resolvers: %v\n", finalResolvers)
@@ -428,9 +392,6 @@ var rootCmd = &cobra.Command{
 		// Display colored banner
 		printBanner()
 
-		// Check for updates
-		checkForUpdates()
-
 		// Show help if no subcommand is provided
 		cmd.Help()
 	},
@@ -450,9 +411,6 @@ var passiveCmd = &cobra.Command{
 
 		// Display colored banner
 		printBanner()
-
-		// Check for updates
-		checkForUpdates()
 
 		// Check if domain or domain list is provided
 		domain, _ := cmd.Flags().GetString("domain")
@@ -522,9 +480,6 @@ var activeCmd = &cobra.Command{
 
 		// Display colored banner
 		printBanner()
-
-		// Check for updates
-		checkForUpdates()
 
 		// Check if domain or domain list is provided
 		domain, _ := cmd.Flags().GetString("domain")
