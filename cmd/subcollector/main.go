@@ -23,7 +23,7 @@ var (
 	blue    = color.New(color.FgBlue).SprintFunc()
 	magenta = color.New(color.FgMagenta).SprintFunc()
 	yellow  = color.New(color.FgYellow).SprintFunc()
-	version = "v1.2.1" // Installed version
+	version = "v1.2.2" // Installed version
 )
 
 // Structure for JSON output
