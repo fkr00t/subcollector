@@ -162,6 +162,10 @@ func lookupWithResolver(domain string, resolver string) ([]string, error) {
 func passiveScan(domain string, showIP bool) ([]SubdomainResult, error) {
 	fmt.Printf("[INF] Starting passive scan for %s...\n\n", domain)
 
+	// Channel to stop the loading animation
+	stopChan := make(chan bool)
+	go showLoading(stopChan) // Start the loading animation
+
 	options := &runner.Options{
 		Threads:            10,   // Number of threads
 		Timeout:            30,   // Timeout in seconds
@@ -171,11 +175,13 @@ func passiveScan(domain string, showIP bool) ([]SubdomainResult, error) {
 
 	runnerInstance, err := runner.NewRunner(options)
 	if err != nil {
+		stopChan <- true // Stop the loading animation
 		return nil, err
 	}
 
 	results, err := runnerInstance.EnumerateSingleDomain(domain, []io.Writer{io.Discard}) // Discard logs
 	if err != nil {
+		stopChan <- true // Stop the loading animation
 		return nil, err
 	}
 
@@ -194,6 +200,7 @@ func passiveScan(domain string, showIP bool) ([]SubdomainResult, error) {
 		subdomains = append(subdomains, subdomainResult)
 	}
 
+	stopChan <- true // Stop the loading animation
 	return subdomains, nil
 }
 
@@ -220,7 +227,6 @@ func activeScan(domain string, wordlistPath string, resolvers []string, rateLimi
 		fmt.Printf("[*] Using custom wordlist: %s\n", wordlistPath)
 	}
 
-	// Hanya tampilkan pemberitahuan rate limit jika diatur oleh pengguna (bukan default)
 	if rateLimit != 100 { // 100 adalah nilai default
 		fmt.Printf("[*] Rate limit set to %d ms\n", rateLimit)
 	}
@@ -233,7 +239,6 @@ func activeScan(domain string, wordlistPath string, resolvers []string, rateLimi
 		fmt.Println("[*] Showing IP addresses for found subdomains")
 	}
 
-	// Check if resolvers is a file or direct DNS addresses
 	var finalResolvers []string
 	if len(resolvers) == 1 && strings.Contains(resolvers[0], ".") && !strings.Contains(resolvers[0], ",") {
 		// If input is a file
@@ -245,7 +250,7 @@ func activeScan(domain string, wordlistPath string, resolvers []string, rateLimi
 		finalResolvers = fileResolvers
 		fmt.Printf("[*] Using custom DNS resolvers from file: %v\n", finalResolvers)
 	} else if len(resolvers) > 0 {
-		// If input is direct DNS addresses
+
 		finalResolvers = resolvers
 		fmt.Printf("[*] Using custom DNS resolvers: %v\n", finalResolvers)
 	}
@@ -344,12 +349,10 @@ func saveResults(output, jsonOutput, domain string, results []SubdomainResult) {
 	}
 }
 
-// Function to display version
 func showVersion() {
 	fmt.Printf("Subcollector version: %s\n", version)
 }
 
-// Function to display colored banner
 func printBanner() {
 	banner := `
       ▌        ▜▜       ▐        
@@ -464,6 +467,23 @@ var passiveCmd = &cobra.Command{
 			}
 		}
 	},
+}
+
+// Function to display loading animation
+func showLoading(stopChan chan bool) {
+	frames := []string{"|", "/", "-", "\\"}
+	i := 0
+	for {
+		select {
+		case <-stopChan:
+			fmt.Printf("\r") // Clear the line
+			return
+		default:
+			fmt.Printf("\r[%s] Scanning...", frames[i])
+			time.Sleep(100 * time.Millisecond)
+			i = (i + 1) % len(frames)
+		}
+	}
 }
 
 // Active command
