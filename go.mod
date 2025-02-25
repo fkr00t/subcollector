@@ -1,4 +1,4 @@
-module subcollector
+module github.com/fkr00t/subcollector
 
 go 1.23.4
 
