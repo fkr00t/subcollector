@@ -24,7 +24,7 @@ var (
 	green   = color.New(color.FgGreen).SprintFunc()
 	blue    = color.New(color.FgBlue).SprintFunc()
 	yellow  = color.New(color.FgYellow).SprintFunc()
-	version = "v1.2.3"
+	version = "v1.3.0"
 )
 
 // SubdomainResult represents a single subdomain finding with associated data
