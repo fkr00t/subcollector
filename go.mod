@@ -1,4 +1,4 @@
-module github.com/fkr00t/subcollector
+module subcollector
 
 go 1.23.4
 
@@ -81,7 +81,7 @@ require (
 	github.com/projectdiscovery/utils v0.4.6 // indirect
 	github.com/refraction-networking/utls v1.6.7 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
-	github.com/rogpeppe/go-internal v1.14.0 // indirect
+	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/rs/xid v1.5.0 // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
 	github.com/shirou/gopsutil/v3 v3.23.7 // indirect
