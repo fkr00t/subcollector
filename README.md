@@ -5,38 +5,54 @@ Subcollector is a tool designed for passive and active subdomain enumeration. It
 
 - **Passive Enumeration**: Uses public APIs to discover subdomains without sending direct requests to the target. 🌐
 - **Active Enumeration**: Uses brute-force techniques with a wordlist to discover subdomains, optimized with worker pools and DNS caching. 🔍
+- **Memory-Efficient Scanning**: Streaming technique for active scanning reduces memory usage with large wordlists. 💾
 - **DNS Resolution**: Supports custom DNS resolvers for improved accuracy and flexibility. 🎯
-- **Rate Limiting**: Controls the speed of DNS requests to avoid detection or throttling. ⏳
+- **Rate Limiting & Adaptive Backoff**: Controls request speed and adapts to server responses to avoid detection or throttling. ⏳
 - **Recursive Enumeration**: Allows recursive subdomain enumeration with configurable depth. 🔄
-- **Subdomain Takeover Detection**: Identifies subdomains vulnerable to takeover (e.g., AWS, Azure, GitHub Pages). ⚠️
+- **Subdomain Takeover Detection**: Identifies subdomains vulnerable to takeover (AWS, Azure, GitHub Pages, and more). ⚠️
 - **Anonymity**: Supports HTTP proxies for takeover detection requests to protect user privacy. 🕵️‍♂️
-- **Progress Tracking**: Displays a progress bar during active enumeration for better user experience. 📊
+- **Real-time Results Display**: Shows results in real-time while maintaining progress tracking. 📊
+- **Enhanced Progress Visualization**: Animated progress bars with ETA and scan statistics. 📈
 - **Colored Output**: Uses color-coded console output to distinguish results and warnings. 🎨
-- **JSON Output**: Saves enumeration results in JSON format for further analysis. 📄
-- **Optimized Performance**: Implements batch DNS requests and caching for faster enumeration. 🚀
+- **Multiple Output Formats**: Save results in text or JSON format for further analysis. 📄
+- **Optimized Performance**: Implements concurrent workers, batch processing, and DNS caching for faster enumeration. 🚀
 - **Data Sanitization**: Ensures sensitive data is not inadvertently exposed in output. 🔒
-- **API Support**: (Planned) Future support for integration into automated workflows via an API. 🔗
 
-## Options
 
-| Option                | Description                                                                                |
-|-----------------------|--------------------------------------------------------------------------------------------|
-| `-d`, `--domain`      | Target domain (e.g., `example.com`)                                                        |
-| `-l`, `--list`        | Path to file containing list of domains                                                    |
-| `-w`, `--wordlist`    | Path to custom wordlist file (default: fetched from GitHub)                                |
-| `-r`, `--resolvers`   | Custom DNS resolvers (e.g., `8.8.8.8,1.1.1.1` or path to file)                             |
-| `-t`, `--rate-limit`  | Rate limit in milliseconds (default: 100)                                                  |
-| `-E`,`--real-time`    | Display results in real-time while maintaining progress bar (default: true) (default true) |
-| `-R`, `--recursive`   | Enable recursive enumeration                                                               |
-| `-D`, `--depth`       | Recursion depth for active scanning (default: 1, `-1` for unlimited)                       |
-| `-s`, `--show-ip`     | Show IP addresses for found subdomains                                                     |
-| `-T`, `--takeover`    | Enable subdomain takeover detection                                                        |
-| `-p`, `--proxy`       | Proxy URL for HTTP requests (e.g., `http://proxy:8080`)                                    |
-| `-o`, `--output`      | Output results to file (text format)                                                       |
-| `-j`, `--json-output` | Save results in JSON format (default: `output.json`)                                       |
-| `-h`, `--help`        | Show help message                                                                          |
-| `-v`, `--version`     | Display program version                                                                    |
+# Options
+## Passive Scans
 
+| Flag | Long Flag | Type | Description |
+|------|-----------|------|-------------|
+| `-d` | `--domain` | string | Target domain (example: example.com) |
+| `-h` | `--help` | | Help for passive |
+| `-j` | `--json-output` | string | Save results in JSON format |
+| `-l` | `--list` | string | Path to file containing list of domains |
+| `-o` | `--output` | string | Save results to file (text format) |
+| `-s` | `--show-ip` | | Show IP addresses for found subdomains |
+| `-S` | `--stream` | | Stream results to output file (reduces memory usage) |
+| `-v` | `--version` | | Display version information |                                                              |
+
+
+## Active Scans
+| Flag | Long Flag | Type | Description |
+|------|-----------|------|-------------|
+| `-D` | `--depth` | int | Recursion depth for active scanning (-1 for unlimited) (default 1) |
+| `-d` | `--domain` | string | Target domain (example: example.com) |
+| `-h` | `--help` | | Help for active |
+| `-j` | `--json-output` | string | Save results in JSON format |
+| `-l` | `--list` | string | Path to file containing list of domains |
+| `-o` | `--output` | string | Save results to file (text format) |
+| `-p` | `--proxy` | string | Proxy URL for HTTP requests (example: http://proxy:8090) |
+| `-t` | `--rate-limit` | int | Rate limit in milliseconds (default 100) |
+| `-R` | `--recursive` | | Enable recursive enumeration |
+| `-r` | `--resolvers` | strings | Custom DNS resolvers (example: 8.8.8.8,1.1.1.1 or path to file) |
+| `-s` | `--show-ip` | | Show IP addresses for found subdomains |
+| `-S` | `--stream` | | Stream results to output file (reduces memory usage) |
+| `-T` | `--takeover` | | Enable subdomain takeover detection |
+| `-v` | `--version` | | Display version information |
+| `-w` | `--wordlist` | string | Path to custom wordlist file |
+| `-W` | `--workers` | int | Number of concurrent workers (default: 10) |
 ## Example
 1. Basic Passive Enumeration
    ```bash
