@@ -7,7 +7,7 @@ import (
 
 var (
 	blue    = color.New(color.FgBlue).SprintFunc()
-	version = "v1.3.0"
+	version = "v1.4.0"
 )
 
 // PrintBanner menampilkan banner aplikasi dengan nama dan versi
