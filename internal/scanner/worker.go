@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/cheggaaa/pb/v3"
-	"subcollector/internal/models"
-	"subcollector/internal/output"
-	"subcollector/internal/utils"
+	"github.com/fkr00t/subcollector/internal/models"
+	"github.com/fkr00t/subcollector/internal/output"
+	"github.com/fkr00t/subcollector/internal/utils"
 )
 
 // Worker adalah fungsi worker konkuren untuk pemindaian aktif

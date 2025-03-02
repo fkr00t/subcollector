@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"subcollector/internal/models"
+	"github.com/fkr00t/subcollector/internal/models"
 )
 
 // TakeoverPatterns adalah peta pola yang digunakan untuk mendeteksi potensi pengambilalihan subdomain

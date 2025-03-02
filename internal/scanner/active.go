@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"subcollector/internal/models"
-	"subcollector/internal/output"
-	"subcollector/internal/utils"
+	"github.com/fkr00t/subcollector/internal/models"
+	"github.com/fkr00t/subcollector/internal/output"
+	"github.com/fkr00t/subcollector/internal/utils"
 )
 
 // ActiveScanConfig menampung konfigurasi untuk pemindaian aktif

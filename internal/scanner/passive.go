@@ -5,10 +5,10 @@ import (
 	"io"
 	"net"
 
+	"github.com/fkr00t/subcollector/internal/models"
+	"github.com/fkr00t/subcollector/internal/output"
+	"github.com/fkr00t/subcollector/internal/utils"
 	"github.com/projectdiscovery/subfinder/v2/pkg/runner"
-	"subcollector/internal/models"
-	"subcollector/internal/output"
-	"subcollector/internal/utils"
 )
 
 // PassiveScanConfig menampung konfigurasi untuk pemindaian pasif

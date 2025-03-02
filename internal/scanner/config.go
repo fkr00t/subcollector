@@ -1,8 +1,8 @@
 package scanner
 
 import (
+	"github.com/fkr00t/subcollector/internal/models"
 	"io"
-	"subcollector/internal/models"
 	"time"
 )
 

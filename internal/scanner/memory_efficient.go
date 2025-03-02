@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/cheggaaa/pb/v3"
-	"subcollector/internal/models"
-	"subcollector/internal/utils"
+	"github.com/fkr00t/subcollector/internal/models"
+	"github.com/fkr00t/subcollector/internal/utils"
 )
 
 // StreamingActiveScan melakukan pemindaian aktif dengan penggunaan memori yang lebih efisien

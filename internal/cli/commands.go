@@ -1,9 +1,9 @@
 package cli
 
 import (
+	"github.com/fkr00t/subcollector/internal/scanner"
+	"github.com/fkr00t/subcollector/internal/utils"
 	"github.com/spf13/cobra"
-	"subcollector/internal/scanner"
-	"subcollector/internal/utils"
 )
 
 var (

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"subcollector/internal/models"
+	"github.com/fkr00t/subcollector/internal/models"
 )
 
 // SaveResults menyimpan hasil pemindaian ke file

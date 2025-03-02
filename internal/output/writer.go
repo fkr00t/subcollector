@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/cheggaaa/pb/v3"
 	"github.com/fatih/color"
-	"subcollector/internal/models"
+	"github.com/fkr00t/subcollector/internal/models"
 	"sync"
 )
 

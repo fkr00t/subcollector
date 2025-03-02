@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"subcollector/internal/cli"
-	"subcollector/internal/utils"
+	"github.com/fkr00t/subcollector/internal/cli"
+	"github.com/fkr00t/subcollector/internal/utils"
 )
 
 // main adalah titik masuk aplikasi
