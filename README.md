@@ -67,7 +67,7 @@ Subcollector is a tool designed for passive and active subdomain enumeration. It
    subcollector active -d example.com -s -T -p http://proxy:8080
    ```
 4. Recursive Enumeration with Custom Wordlist and Output
-   ```
+   ```bash
    subcollector active -d example.com -w wordlist.txt -R -D 2 -o results.txt
    ```
    
@@ -77,6 +77,12 @@ Subcollector is a tool designed for passive and active subdomain enumeration. It
 2. Install Subcollector and its dependencies:
    ```bash
    go install github.com/fkr00t/subcollector/cmd/subcollector@latest
+   ```
+   or, you can use this
+   ```bash
+   go install github.com/fkr00t/subcollector/cmd/subcollector@v1.4.1
+   ```
+
 
 ## Contributing
 Feel free to submit issues or pull requests to the GitHub repository. Contributions to improve performance, add new takeover patterns, or implement API support are welcome!
