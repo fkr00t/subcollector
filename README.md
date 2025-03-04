@@ -80,7 +80,7 @@ Subcollector is a tool designed for passive and active subdomain enumeration. It
    ```
    or, you can use this
    ```bash
-   go install github.com/fkr00t/subcollector/cmd/subcollector@v1.4.1
+   go install github.com/fkr00t/subcollector/cmd/subcollector@v1.4.2
    ```
 
 
