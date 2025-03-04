@@ -10,9 +10,9 @@ import (
 	"strings"
 )
 
-// LoadDomains membaca daftar domain dari file
-// Setiap domain harus berada pada baris baru
-// Mengembalikan slice domain dan error yang ditemui
+// LoadDomains reads a list of domains from a file
+// Each domain should be on a new line
+// Returns a slice of domains and any errors encountered
 func LoadDomains(filePath string) ([]string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -36,9 +36,9 @@ func LoadDomains(filePath string) ([]string, error) {
 	return domains, nil
 }
 
-// LoadWordlist membaca wordlist dari file untuk pemindaian aktif
-// Setiap kata harus berada pada baris baru
-// Mengembalikan slice kata dan error yang ditemui
+// LoadWordlist reads a wordlist from a file for active scanning
+// Each word should be on a new line
+// Returns a slice of words and any errors encountered
 func LoadWordlist(filePath string) ([]string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -62,18 +62,18 @@ func LoadWordlist(filePath string) ([]string, error) {
 	return wordlist, nil
 }
 
-// FetchWordlistFromURL mengunduh wordlist dari URL
-// Digunakan ketika tidak ada wordlist lokal yang ditentukan
-// Mengembalikan slice kata dan error yang ditemui
+// FetchWordlistFromURL downloads a wordlist from a URL
+// Used when no local wordlist is specified
+// Returns a slice of words and any errors encountered
 func FetchWordlistFromURL(url string) ([]string, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("gagal mengunduh wordlist: %v", err)
+		return nil, fmt.Errorf("failed to download wordlist: %v", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("gagal mengunduh wordlist: kode status %d", resp.StatusCode)
+		return nil, fmt.Errorf("failed to download wordlist: status code %d", resp.StatusCode)
 	}
 
 	var wordlist []string
@@ -86,30 +86,30 @@ func FetchWordlistFromURL(url string) ([]string, error) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("gagal membaca wordlist: %v", err)
+		return nil, fmt.Errorf("failed to read wordlist: %v", err)
 	}
 
 	return wordlist, nil
 }
 
-// FetchWordlistReaderFromURL mengunduh wordlist dari URL dan mengembalikan reader
-// untuk streaming yang lebih efisien
+// FetchWordlistReaderFromURL downloads a wordlist from a URL and returns a reader
+// for more efficient streaming
 func FetchWordlistReaderFromURL(url string) (io.Reader, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("gagal mengunduh wordlist: %v", err)
+		return nil, fmt.Errorf("failed to download wordlist: %v", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		resp.Body.Close()
-		return nil, fmt.Errorf("gagal mengunduh wordlist: kode status %d", resp.StatusCode)
+		return nil, fmt.Errorf("failed to download wordlist: status code %d", resp.StatusCode)
 	}
 
 	return resp.Body, nil
 }
 
-// LoadWordlistReader membaca wordlist dari file dan mengembalikan reader
-// untuk streaming yang lebih efisien
+// LoadWordlistReader reads a wordlist from a file and returns a reader
+// for more efficient streaming
 func LoadWordlistReader(filePath string) (io.Reader, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -118,10 +118,10 @@ func LoadWordlistReader(filePath string) (io.Reader, error) {
 	return file, nil
 }
 
-// LoadResolvers membaca daftar resolver DNS dari file
-// Setiap resolver harus berada pada baris baru
-// Baris yang dimulai dengan # diperlakukan sebagai komentar
-// Mengembalikan slice alamat resolver dan error yang ditemui
+// LoadResolvers reads a list of DNS resolvers from a file
+// Each resolver should be on a new line
+// Lines starting with # are treated as comments
+// Returns a slice of resolver addresses and any errors encountered
 func LoadResolvers(filePath string) ([]string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -145,8 +145,8 @@ func LoadResolvers(filePath string) ([]string, error) {
 	return resolvers, nil
 }
 
-// CountLinesInFile menghitung jumlah baris dalam file
-// Metode ini lebih efisien daripada membaca seluruh file ke memori
+// CountLinesInFile counts the number of lines in a file
+// This method is more efficient than reading the entire file into memory
 func CountLinesInFile(filePath string) (int, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -154,7 +154,7 @@ func CountLinesInFile(filePath string) (int, error) {
 	}
 	defer file.Close()
 
-	// Buat buffer untuk membaca secara efisien
+	// Create buffer for efficient reading
 	buf := make([]byte, 32*1024)
 	count := 0
 	lineSep := []byte{'\n'}
@@ -169,22 +169,22 @@ func CountLinesInFile(filePath string) (int, error) {
 			break
 		}
 
-		// Hitung jumlah newline dalam buffer
+		// Count the number of newlines in the buffer
 		count += bytes.Count(buf[:c], lineSep)
 	}
 
-	// Jika file tidak diakhiri dengan newline, tambahkan satu baris
+	// If the file doesn't end with a newline, add one line
 	if count > 0 {
-		// Periksa karakter terakhir
+		// Check the last character
 		_, err := file.Seek(-1, io.SeekEnd)
 		if err != nil {
-			return count, nil // Abaikan error, gunakan jumlah yang dihitung
+			return count, nil // Ignore error, use the counted amount
 		}
 
 		lastChar := make([]byte, 1)
 		_, err = file.Read(lastChar)
 		if err != nil {
-			return count, nil // Abaikan error, gunakan jumlah yang dihitung
+			return count, nil // Ignore error, use the counted amount
 		}
 
 		if lastChar[0] != '\n' {

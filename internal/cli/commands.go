@@ -17,7 +17,7 @@ var (
 var rootCmd = &cobra.Command{
 	Use:   "subcollector",
 	Short: "Subcollector - Subdomain Enumeration Tool",
-	Long:  "Subcollector adalah alat untuk menghitung subdomain menggunakan teknik pasif dan aktif.",
+	Long:  "Subcollector is a tool for enumerating subdomains using passive and active techniques.",
 	Run: func(cmd *cobra.Command, args []string) {
 		if versionFlag, _ := cmd.Flags().GetBool("version"); versionFlag {
 			ShowVersion()
@@ -30,7 +30,7 @@ var rootCmd = &cobra.Command{
 
 var passiveCmd = &cobra.Command{
 	Use:   "passive",
-	Short: "Melakukan enumerasi subdomain secara pasif",
+	Short: "Perform passive subdomain enumeration",
 	Run: func(cmd *cobra.Command, args []string) {
 		if versionFlag, _ := cmd.Flags().GetBool("version"); versionFlag {
 			ShowVersion()
@@ -38,7 +38,7 @@ var passiveCmd = &cobra.Command{
 		}
 
 		if domain == "" && listPath == "" {
-			cmd.Println("[ERR] Mohon tentukan domain (-d) atau daftar domain (-l)")
+			cmd.Println("[ERR] Please specify a domain (-d) or a domain list (-l)")
 			return
 		}
 
@@ -48,7 +48,7 @@ var passiveCmd = &cobra.Command{
 
 var activeCmd = &cobra.Command{
 	Use:   "active",
-	Short: "Melakukan enumerasi subdomain secara aktif",
+	Short: "Perform active subdomain enumeration",
 	Run: func(cmd *cobra.Command, args []string) {
 		if versionFlag, _ := cmd.Flags().GetBool("version"); versionFlag {
 			ShowVersion()
@@ -56,7 +56,7 @@ var activeCmd = &cobra.Command{
 		}
 
 		if domain == "" && listPath == "" {
-			cmd.Println("[ERR] Mohon tentukan domain (-d) atau daftar domain (-l)")
+			cmd.Println("[ERR] Please specify a domain (-d) or a domain list (-l)")
 			return
 		}
 
@@ -64,12 +64,12 @@ var activeCmd = &cobra.Command{
 	},
 }
 
-// Execute menjalankan command root
+// Execute runs the root command
 func Execute() error {
 	return rootCmd.Execute()
 }
 
-// init menginisialisasi perintah CLI dan flag
+// init initializes CLI commands and flags
 func init() {
 	rootCmd.AddCommand(activeCmd)
 	rootCmd.AddCommand(passiveCmd)
@@ -84,7 +84,7 @@ func init() {
 	setupFlags()
 }
 
-// handlePassiveCommand menangani eksekusi perintah passive
+// handlePassiveCommand handles execution of the passive command
 func handlePassiveCommand() {
 	var domains []string
 	var err error
@@ -92,14 +92,14 @@ func handlePassiveCommand() {
 	if listPath != "" {
 		domains, err = utils.LoadDomains(listPath)
 		if err != nil {
-			utils.PrintError("Gagal memuat daftar domain!")
+			utils.PrintError("Failed to load domain list!")
 			return
 		}
 	} else {
 		domains = []string{domain}
 	}
 
-	// Konfigurasi untuk pemindaian pasif
+	// Configuration for passive scanning
 	config := scanner.PassiveScanConfig{
 		ShowIP:         showIP,
 		StreamResults:  streamResults,
@@ -107,7 +107,7 @@ func handlePassiveCommand() {
 		JsonOutputFile: jsonOutput,
 	}
 
-	// Jalankan pemindaian pasif untuk setiap domain
+	// Run passive scanning for each domain
 	for _, d := range domains {
 		cleanedDomain := utils.CleanDomain(d)
 		if cleanedDomain == "" {
@@ -119,7 +119,7 @@ func handlePassiveCommand() {
 	}
 }
 
-// handleActiveCommand menangani eksekusi perintah active
+// handleActiveCommand handles execution of the active command
 func handleActiveCommand() {
 	var domains []string
 	var err error
@@ -127,31 +127,30 @@ func handleActiveCommand() {
 	if listPath != "" {
 		domains, err = utils.LoadDomains(listPath)
 		if err != nil {
-			utils.PrintError("Gagal memuat daftar domain!")
+			utils.PrintError("Failed to load domain list!")
 			return
 		}
 	} else {
 		domains = []string{domain}
 	}
 
-	// Konfigurasi untuk pemindaian aktif
+	// Configuration for active scanning
 	config := scanner.ActiveScanConfig{
-		WordlistPath:  wordlistPath,
-		Resolvers:     resolvers,
-		RateLimit:     rateLimit,
-		Recursive:     recursive,
-		ShowIP:        showIP,
-		Depth:         depth,
-		Takeover:      takeover,
-		Proxy:         proxy,
-		NumWorkers:    numWorkers,
-		StreamResults: streamResults,
-		//RealTimeDisplay: realTimeDisplay,
+		WordlistPath:   wordlistPath,
+		Resolvers:      resolvers,
+		RateLimit:      rateLimit,
+		Recursive:      recursive,
+		ShowIP:         showIP,
+		Depth:          depth,
+		Takeover:       takeover,
+		Proxy:          proxy,
+		NumWorkers:     numWorkers,
+		StreamResults:  streamResults,
 		OutputFile:     output,
 		JsonOutputFile: jsonOutput,
 	}
 
-	// Jalankan pemindaian aktif untuk setiap domain
+	// Run active scanning for each domain
 	for _, d := range domains {
 		cleanedDomain := utils.CleanDomain(d)
 		if cleanedDomain == "" {

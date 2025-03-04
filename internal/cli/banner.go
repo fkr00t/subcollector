@@ -7,10 +7,10 @@ import (
 
 var (
 	blue    = color.New(color.FgBlue).SprintFunc()
-	version = "v1.4.1"
+	version = "v1.4.2"
 )
 
-// PrintBanner menampilkan banner aplikasi dengan nama dan versi
+// PrintBanner displays the application banner with its name and version
 func PrintBanner() {
 	fmt.Println(blue("   _____       __               ____          __            "))
 	fmt.Println(blue("  / ___/__  __/ /_  _________  / / /__  _____/ /_____  _____"))
@@ -23,7 +23,7 @@ func PrintBanner() {
 	fmt.Println("")
 }
 
-// ShowVersion menampilkan versi aplikasi
+// ShowVersion displays the application version
 func ShowVersion() {
 	PrintBanner()
 }

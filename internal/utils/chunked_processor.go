@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-// ChunkProcessor menangani pemrosesan data dalam chunk untuk penggunaan memori yang efisien
+// ChunkProcessor handles data processing in chunks for efficient memory usage
 type ChunkProcessor struct {
 	chunkSize     int
 	numWorkers    int
@@ -17,7 +17,7 @@ type ChunkProcessor struct {
 	errorCallback func(error)
 }
 
-// NewChunkProcessor membuat instance baru dari ChunkProcessor
+// NewChunkProcessor creates a new instance of ChunkProcessor
 func NewChunkProcessor(chunkSize, numWorkers, maxQueueSize int, processor func([]string) error, errorCallback func(error)) *ChunkProcessor {
 	return &ChunkProcessor{
 		chunkSize:     chunkSize,
@@ -28,14 +28,14 @@ func NewChunkProcessor(chunkSize, numWorkers, maxQueueSize int, processor func([
 	}
 }
 
-// ProcessReader memproses data dari reader dalam chunk
+// ProcessReader processes data from reader in chunks
 func (cp *ChunkProcessor) ProcessReader(reader io.Reader) error {
 	scanner := bufio.NewScanner(reader)
 
-	// Buat buffer untuk memuat chunk sementara
+	// Create buffer to hold temporary chunks
 	chunks := make(chan []string, cp.maxQueueSize)
 
-	// Goroutine untuk membaca data dan membuat chunk
+	// Goroutine to read data and create chunks
 	go func() {
 		defer close(chunks)
 
@@ -46,9 +46,9 @@ func (cp *ChunkProcessor) ProcessReader(reader io.Reader) error {
 			if line != "" {
 				currentChunk = append(currentChunk, line)
 
-				// Jika chunk sudah penuh, kirim ke channel
+				// If chunk is full, send to channel
 				if len(currentChunk) >= cp.chunkSize {
-					// Buat salinan chunk untuk dikirim (karena slice bersifat referensi)
+					// Create a copy of the chunk to send (since slices are references)
 					chunkCopy := make([]string, len(currentChunk))
 					copy(chunkCopy, currentChunk)
 					chunks <- chunkCopy
@@ -59,20 +59,20 @@ func (cp *ChunkProcessor) ProcessReader(reader io.Reader) error {
 			}
 		}
 
-		// Kirim chunk terakhir jika ada
+		// Send last chunk if it exists
 		if len(currentChunk) > 0 {
 			chunks <- currentChunk
 		}
 
-		// Periksa error scanner
+		// Check scanner errors
 		if err := scanner.Err(); err != nil {
 			if cp.errorCallback != nil {
-				cp.errorCallback(fmt.Errorf("error saat membaca data: %v", err))
+				cp.errorCallback(fmt.Errorf("error while reading data: %v", err))
 			}
 		}
 	}()
 
-	// Buat worker pool untuk memproses chunk
+	// Create worker pool to process chunks
 	var wg sync.WaitGroup
 
 	// Start workers
@@ -91,32 +91,32 @@ func (cp *ChunkProcessor) ProcessReader(reader io.Reader) error {
 		}()
 	}
 
-	// Tunggu semua worker selesai
+	// Wait for all workers to finish
 	wg.Wait()
 
 	return nil
 }
 
-// ProcessWordlist memproses file wordlist dalam chunk
+// ProcessWordlist processes a wordlist file in chunks
 func (cp *ChunkProcessor) ProcessWordlist(filePath string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return fmt.Errorf("gagal membuka file wordlist: %v", err)
+		return fmt.Errorf("failed to open wordlist file: %v", err)
 	}
 	defer file.Close()
 
 	return cp.ProcessReader(file)
 }
 
-// ProcessStringSlice memproses slice string dalam chunk
+// ProcessStringSlice processes a string slice in chunks
 func (cp *ChunkProcessor) ProcessStringSlice(items []string) error {
 	itemsCopy := make([]string, len(items))
 	copy(itemsCopy, items)
 
-	// Buat channel untuk chunk
+	// Create channel for chunks
 	chunks := make(chan []string, cp.maxQueueSize)
 
-	// Goroutine untuk membagi slice menjadi chunk
+	// Goroutine to divide slice into chunks
 	go func() {
 		defer close(chunks)
 
@@ -126,13 +126,13 @@ func (cp *ChunkProcessor) ProcessStringSlice(items []string) error {
 				end = len(itemsCopy)
 			}
 
-			// Buat chunk baru dari slice
+			// Create new chunk from slice
 			chunk := itemsCopy[i:end]
 			chunks <- chunk
 		}
 	}()
 
-	// Buat worker pool untuk memproses chunk
+	// Create worker pool to process chunks
 	var wg sync.WaitGroup
 
 	// Start workers
@@ -151,7 +151,7 @@ func (cp *ChunkProcessor) ProcessStringSlice(items []string) error {
 		}()
 	}
 
-	// Tunggu semua worker selesai
+	// Wait for all workers to finish
 	wg.Wait()
 
 	return nil

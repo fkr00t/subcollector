@@ -7,78 +7,78 @@ import (
 	"strings"
 )
 
-// ExtractRootDomain mengekstrak domain root dari subdomain
-// Digunakan untuk tujuan rate limiting
+// ExtractRootDomain extracts the root domain from a subdomain
+// Used for rate limiting purposes
 func ExtractRootDomain(subdomain string) string {
 	parts := strings.Split(subdomain, ".")
 
-	// Jika hanya memiliki 1 bagian, kembalikan as-is
+	// If it has only 1 part, return as-is
 	if len(parts) <= 1 {
 		return subdomain
 	}
 
-	// Jika memiliki 2 bagian, kembalikan seluruhnya
+	// If it has 2 parts, return the whole thing
 	if len(parts) == 2 {
 		return subdomain
 	}
 
-	// Untuk subdomain yang lebih panjang, ambil 2 bagian terakhir
-	// contoh: sub.example.com -> example.com
+	// For longer subdomains, take the last 2 parts
+	// example: sub.example.com -> example.com
 	return strings.Join(parts[len(parts)-2:], ".")
 }
 
-// ParseCIDR mengekstrak dan memvalidasi rentang CIDR
+// ParseCIDR extracts and validates a CIDR range
 func ParseCIDR(cidr string) (string, int, error) {
 	parts := strings.Split(cidr, "/")
 	if len(parts) != 2 {
-		return "", 0, fmt.Errorf("format CIDR tidak valid: %s", cidr)
+		return "", 0, fmt.Errorf("invalid CIDR format: %s", cidr)
 	}
 
 	ip := parts[0]
 	mask, err := strconv.Atoi(parts[1])
 	if err != nil {
-		return "", 0, fmt.Errorf("mask CIDR tidak valid: %s", parts[1])
+		return "", 0, fmt.Errorf("invalid CIDR mask: %s", parts[1])
 	}
 
 	if mask < 0 || mask > 32 {
-		return "", 0, fmt.Errorf("mask CIDR harus antara 0 dan 32, ditemukan: %d", mask)
+		return "", 0, fmt.Errorf("CIDR mask must be between 0 and 32, found: %d", mask)
 	}
 
-	// Validasi IP
+	// Validate IP
 	if net.ParseIP(ip) == nil {
-		return "", 0, fmt.Errorf("alamat IP tidak valid: %s", ip)
+		return "", 0, fmt.Errorf("invalid IP address: %s", ip)
 	}
 
 	return ip, mask, nil
 }
 
-// IsSubdomainOf memeriksa apakah domain adalah subdomain dari parentDomain
+// IsSubdomainOf checks if a domain is a subdomain of parentDomain
 func IsSubdomainOf(domain, parentDomain string) bool {
 	domain = strings.TrimSuffix(domain, ".")
 	parentDomain = strings.TrimSuffix(parentDomain, ".")
 
 	if domain == parentDomain {
-		return false // Domain sama bukan subdomain
+		return false // Same domain is not a subdomain
 	}
 
 	return strings.HasSuffix(domain, "."+parentDomain)
 }
 
-// CountSubdomainLevels menghitung jumlah level dalam subdomain
+// CountSubdomainLevels counts the number of levels in a subdomain
 func CountSubdomainLevels(domain string) int {
 	return len(strings.Split(domain, ".")) - 1
 }
 
-// IsValidDomain memeriksa apakah string adalah domain yang valid
+// IsValidDomain checks if a string is a valid domain
 func IsValidDomain(domain string) bool {
 	domain = CleanDomain(domain)
 
-	// Domain tidak boleh kosong
+	// Domain cannot be empty
 	if domain == "" {
 		return false
 	}
 
-	// Domain tidak boleh mengandung karakter ilegal
+	// Domain cannot contain illegal characters
 	invalidChars := []string{" ", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "+", "=", "{", "}", "[", "]", ":", ";", "'", "\"", "<", ">", ",", "?", "/", "\\", "|"}
 	for _, char := range invalidChars {
 		if strings.Contains(domain, char) {
@@ -86,22 +86,22 @@ func IsValidDomain(domain string) bool {
 		}
 	}
 
-	// Domain harus memiliki setidaknya satu dot
+	// Domain must have at least one dot
 	if !strings.Contains(domain, ".") {
 		return false
 	}
 
-	// Domain harus diakhiri dengan TLD yang valid
-	// Ini adalah pemeriksaan sederhana, Anda mungkin ingin menggunakan library seperti tldextract
+	// Domain must end with a valid TLD
+	// This is a simple check, you might want to use a library like tldextract
 	parts := strings.Split(domain, ".")
 	tld := parts[len(parts)-1]
 
-	// TLD minimal 2 karakter
+	// TLD must be at least 2 characters
 	if len(tld) < 2 {
 		return false
 	}
 
-	// TLD harus semua huruf (pemeriksaan sederhana)
+	// TLD must be all letters (simple check)
 	for _, c := range tld {
 		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
 			return false

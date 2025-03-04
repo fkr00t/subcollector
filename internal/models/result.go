@@ -1,14 +1,14 @@
 package models
 
-// SubdomainResult merepresentasikan hasil penemuan satu subdomain dengan data terkait
+// SubdomainResult represents the result of discovering a subdomain with its associated data
 type SubdomainResult struct {
-	Subdomain string   `json:"subdomain"`          // Subdomain yang ditemukan
-	IPs       []string `json:"ips,omitempty"`      // Alamat IP yang terkait dengan subdomain
-	Takeover  string   `json:"takeover,omitempty"` // Potensi layanan yang bisa diambil alih
+	Subdomain string   `json:"subdomain"`          // The discovered subdomain
+	IPs       []string `json:"ips,omitempty"`      // Associated IP addresses for the subdomain
+	Takeover  string   `json:"takeover,omitempty"` // Potential takeover vulnerability
 }
 
-// OutputJSON merepresentasikan struktur output lengkap untuk serialisasi JSON
+// OutputJSON represents the complete output structure for JSON serialization
 type OutputJSON struct {
-	Domain     string            `json:"domain"`     // Domain utama yang dipindai
-	Subdomains []SubdomainResult `json:"subdomains"` // Daftar subdomain yang ditemukan
+	Domain     string            `json:"domain"`     // The main scanned domain
+	Subdomains []SubdomainResult `json:"subdomains"` // List of discovered subdomains
 }

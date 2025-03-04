@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// LogLevel menentukan tingkat level log
+// LogLevel determines the log level
 type LogLevel int
 
 const (
@@ -20,16 +20,16 @@ const (
 	LevelFatal
 )
 
-// LoggerConfig adalah konfigurasi untuk Logger
+// LoggerConfig is the configuration for Logger
 type LoggerConfig struct {
-	Level        LogLevel  // Minimal log level
-	OutputFile   string    // Path ke file output (opsional)
-	ColorEnabled bool      // Apakah warna diaktifkan
-	TimeFormat   string    // Format timestamp
-	Writer       io.Writer // Writer kustom (opsional, default: os.Stdout)
+	Level        LogLevel  // Minimum log level
+	OutputFile   string    // Path to output file (optional)
+	ColorEnabled bool      // Whether color is enabled
+	TimeFormat   string    // Timestamp format
+	Writer       io.Writer // Custom writer (optional, default: os.Stdout)
 }
 
-// Logger adalah logger terstruktur thread-safe
+// Logger is a thread-safe structured logger
 type Logger struct {
 	config LoggerConfig
 	mu     sync.Mutex
@@ -37,7 +37,7 @@ type Logger struct {
 	writer io.Writer
 }
 
-// String representation dari log level
+// String representation of log level
 func (l LogLevel) String() string {
 	switch l {
 	case LevelDebug:
@@ -55,7 +55,7 @@ func (l LogLevel) String() string {
 	}
 }
 
-// Color codes untuk log level
+// Color codes for log level
 func (l LogLevel) Color() string {
 	switch l {
 	case LevelDebug:
@@ -73,33 +73,33 @@ func (l LogLevel) Color() string {
 	}
 }
 
-// NewLogger membuat instance logger baru
+// NewLogger creates a new logger instance
 func NewLogger(config LoggerConfig) (*Logger, error) {
 	logger := &Logger{
 		config: config,
 		writer: os.Stdout,
 	}
 
-	// Gunakan writer kustom jika disediakan
+	// Use custom writer if provided
 	if config.Writer != nil {
 		logger.writer = config.Writer
 	}
 
-	// Buka file output jika disediakan
+	// Open output file if provided
 	if config.OutputFile != "" {
 		file, err := os.OpenFile(config.OutputFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
-			return nil, fmt.Errorf("gagal membuka file log: %v", err)
+			return nil, fmt.Errorf("failed to open log file: %v", err)
 		}
 		logger.file = file
 
-		// Jika tidak ada writer kustom, gunakan file sebagai writer
+		// If no custom writer, use file as writer
 		if config.Writer == nil {
 			logger.writer = file
 		}
 	}
 
-	// Set format timestamp default jika tidak disediakan
+	// Set default timestamp format if not provided
 	if config.TimeFormat == "" {
 		logger.config.TimeFormat = "2006-01-02 15:04:05"
 	}
@@ -107,7 +107,7 @@ func NewLogger(config LoggerConfig) (*Logger, error) {
 	return logger, nil
 }
 
-// Close menutup logger dan file terkait
+// Close closes the logger and related file
 func (l *Logger) Close() error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -118,15 +118,15 @@ func (l *Logger) Close() error {
 	return nil
 }
 
-// formatMessage memformat pesan log dengan level, timestamp, dan warna
+// formatMessage formats a log message with level, timestamp, and color
 func (l *Logger) formatMessage(level LogLevel, message string) string {
 	timestamp := time.Now().Format(l.config.TimeFormat)
 	levelStr := level.String()
 
-	// Format dasar: [LEVEL] [TIME] message
+	// Basic format: [LEVEL] [TIME] message
 	formatted := fmt.Sprintf("[%s] [%s] %s", levelStr, timestamp, message)
 
-	// Tambahkan warna jika diaktifkan
+	// Add color if enabled
 	if l.config.ColorEnabled && l.writer == os.Stdout {
 		colorCode := level.Color()
 		resetCode := "\033[0m"
@@ -136,35 +136,35 @@ func (l *Logger) formatMessage(level LogLevel, message string) string {
 	return formatted
 }
 
-// log adalah metode internal untuk menulis pesan log
+// log is an internal method for writing log messages
 func (l *Logger) log(level LogLevel, message string, args ...interface{}) {
-	// Skip jika level lebih rendah dari konfigurasi
+	// Skip if level is lower than configuration
 	if level < l.config.Level {
 		return
 	}
 
-	// Format pesan jika args disediakan
+	// Format message if args provided
 	if len(args) > 0 {
 		message = fmt.Sprintf(message, args...)
 	}
 
-	// Format pesan log
+	// Format log message
 	formatted := l.formatMessage(level, message)
 
-	// Tambahkan newline jika belum ada
+	// Add newline if not already there
 	if !strings.HasSuffix(formatted, "\n") {
 		formatted += "\n"
 	}
 
-	// Tulis log ke output dengan mutex untuk thread safety
+	// Write log to output with mutex for thread safety
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
 	fmt.Fprint(l.writer, formatted)
 
-	// Jika kita memiliki file dan writer kustom, tulis juga ke file
+	// If we have a file and custom writer, also write to file
 	if l.file != nil && l.writer != l.file {
-		// Format tanpa warna untuk file
+		// Format without color for file
 		plainFormatted := l.formatMessage(level, message)
 		if !strings.HasSuffix(plainFormatted, "\n") {
 			plainFormatted += "\n"
@@ -172,44 +172,44 @@ func (l *Logger) log(level LogLevel, message string, args ...interface{}) {
 		fmt.Fprint(l.file, plainFormatted)
 	}
 
-	// Keluar jika fatal
+	// Exit if fatal
 	if level == LevelFatal {
 		os.Exit(1)
 	}
 }
 
-// Debug logs message dengan level Debug
+// Debug logs a message with Debug level
 func (l *Logger) Debug(message string, args ...interface{}) {
 	l.log(LevelDebug, message, args...)
 }
 
-// Info logs message dengan level Info
+// Info logs a message with Info level
 func (l *Logger) Info(message string, args ...interface{}) {
 	l.log(LevelInfo, message, args...)
 }
 
-// Warn logs message dengan level Warning
+// Warn logs a message with Warning level
 func (l *Logger) Warn(message string, args ...interface{}) {
 	l.log(LevelWarning, message, args...)
 }
 
-// Error logs message dengan level Error
+// Error logs a message with Error level
 func (l *Logger) Error(message string, args ...interface{}) {
 	l.log(LevelError, message, args...)
 }
 
-// Fatal logs message dengan level Fatal dan exit(1)
+// Fatal logs a message with Fatal level and exit(1)
 func (l *Logger) Fatal(message string, args ...interface{}) {
 	l.log(LevelFatal, message, args...)
 }
 
-// Singleton global logger untuk kemudahan penggunaan
+// Singleton global logger for ease of use
 var (
 	globalLogger *Logger
 	once         sync.Once
 )
 
-// InitGlobalLogger menginisialisasi logger global
+// InitGlobalLogger initializes the global logger
 func InitGlobalLogger(config LoggerConfig) error {
 	var err error
 	once.Do(func() {
@@ -218,10 +218,10 @@ func InitGlobalLogger(config LoggerConfig) error {
 	return err
 }
 
-// GetLogger mengembalikan instance logger global
+// GetLogger returns the global logger instance
 func GetLogger() *Logger {
 	if globalLogger == nil {
-		// Inisialisasi logger default jika belum diinisialisasi
+		// Initialize default logger if not initialized
 		_ = InitGlobalLogger(LoggerConfig{
 			Level:        LevelInfo,
 			ColorEnabled: true,
@@ -230,29 +230,29 @@ func GetLogger() *Logger {
 	return globalLogger
 }
 
-// Helper functions untuk menggunakan logger global secara langsung
+// Helper functions for using the global logger directly
 
-// Debug logs message dengan level Debug menggunakan logger global
+// Debug logs a message with Debug level using the global logger
 func Debug(message string, args ...interface{}) {
 	GetLogger().Debug(message, args...)
 }
 
-// Info logs message dengan level Info menggunakan logger global
+// Info logs a message with Info level using the global logger
 func Info(message string, args ...interface{}) {
 	GetLogger().Info(message, args...)
 }
 
-// Warn logs message dengan level Warning menggunakan logger global
+// Warn logs a message with Warning level using the global logger
 func Warn(message string, args ...interface{}) {
 	GetLogger().Warn(message, args...)
 }
 
-// Error logs message dengan level Error menggunakan logger global
+// Error logs a message with Error level using the global logger
 func Error(message string, args ...interface{}) {
 	GetLogger().Error(message, args...)
 }
 
-// Fatal logs message dengan level Fatal menggunakan logger global dan exit(1)
+// Fatal logs a message with Fatal level using the global logger and exit(1)
 func Fatal(message string, args ...interface{}) {
 	GetLogger().Fatal(message, args...)
 }

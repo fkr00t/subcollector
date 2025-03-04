@@ -11,12 +11,12 @@ import (
 	"github.com/fkr00t/subcollector/internal/utils"
 )
 
-// StreamingActiveScan melakukan pemindaian aktif dengan penggunaan memori yang lebih efisien
-// menggunakan streaming untuk membaca wordlist dan memproses hasil
+// StreamingActiveScan performs active scanning with more efficient memory usage
+// using streaming to read the wordlist and process results
 func StreamingActiveScan(config StreamingActiveScanConfig) error {
-	fmt.Printf("[*] Memulai pemindaian aktif streaming untuk %s...\n\n", config.Domain)
+	fmt.Printf("[*] Starting active streaming scan for %s...\n\n", config.Domain)
 
-	// Inisialisasi backoff jika diaktifkan
+	// Initialize backoff if enabled
 	var backoff *utils.ExponentialBackoff
 	if config.BackoffConfig.Enabled {
 		backoff = utils.NewExponentialBackoff(
@@ -27,34 +27,34 @@ func StreamingActiveScan(config StreamingActiveScanConfig) error {
 		)
 	}
 
-	// Siapkan DNS cache dengan LRU + TTL
+	// Set up DNS cache with LRU + TTL
 	dnsCache := models.NewDNSCacheWithLRU(10000, 30*time.Minute)
-	// Mulai pembersihan otomatis cache setiap 5 menit
+	// Start automatic cache cleanup every 5 minutes
 	dnsCache.StartCleanup(5 * time.Minute)
 
-	// Siapkan HTTP client untuk pemeriksaan takeover
+	// Set up HTTP client for takeover checks
 	client := setupHTTPClient(config.Takeover, config.Proxy)
 
-	// Proses resolver
+	// Process resolvers
 	finalResolvers := processResolvers(config.Resolvers)
 
-	// Lakukan pemindaian level per level (untuk rekursif)
+	// Perform scanning level by level (for recursive)
 	level := 1
 	toScan := []string{config.Domain}
 
-	// Buat worker pool yang bisa digunakan kembali
+	// Create a reusable worker pool
 	workerPool := utils.NewWorkerPool(config.NumWorkers, config.NumWorkers*2)
 	workerPool.Start()
 	defer workerPool.Stop()
 
-	// Untuk setiap level rekursif
+	// For each recursive level
 	for len(toScan) > 0 && (config.Depth == -1 || level <= config.Depth) {
-		fmt.Printf("[INF] Enumerasi level %d: %d domain\n", level, len(toScan))
+		fmt.Printf("[INF] Enumeration level %d: %d domains\n", level, len(toScan))
 
-		// Buat channel untuk mengirim subdomain ke worker pool
+		// Create channel to send subdomains to worker pool
 		taskQueue := make(chan string, 1000)
 
-		// Goroutine untuk membaca wordlist dan mengisi taskQueue
+		// Goroutine to read wordlist and fill taskQueue
 		go func() {
 			defer close(taskQueue)
 
@@ -62,7 +62,7 @@ func StreamingActiveScan(config StreamingActiveScanConfig) error {
 				var reader io.Reader
 				var err error
 
-				// Gunakan wordlist reader jika disediakan, jika tidak baca dari file
+				// Use wordlist reader if provided, otherwise read from file
 				if config.WordlistReader != nil {
 					reader = config.WordlistReader
 				} else {
@@ -74,12 +74,12 @@ func StreamingActiveScan(config StreamingActiveScanConfig) error {
 					}
 
 					if err != nil {
-						fmt.Printf("Error: Gagal memuat wordlist: %v\n", err)
+						fmt.Printf("Error: Failed to load wordlist: %v\n", err)
 						return
 					}
 				}
 
-				// Gunakan buffer untuk membaca wordlist dalam chunk
+				// Use buffer to read wordlist in chunks
 				buffer := make([]byte, 8192)
 				var word string
 
@@ -95,11 +95,11 @@ func StreamingActiveScan(config StreamingActiveScanConfig) error {
 						break
 					}
 					if err != nil {
-						fmt.Printf("Error: Gagal membaca wordlist: %v\n", err)
+						fmt.Printf("Error: Failed to read wordlist: %v\n", err)
 						break
 					}
 
-					// Proses chunk
+					// Process chunk
 					for i := 0; i < n; i++ {
 						if buffer[i] == '\n' || buffer[i] == '\r' {
 							if word != "" {
@@ -115,7 +115,7 @@ func StreamingActiveScan(config StreamingActiveScanConfig) error {
 			}
 		}()
 
-		// Setup progress bar dinamis
+		// Setup dynamic progress bar
 		bar := pb.New(0)
 		bar.SetTemplateString(`{{ cyan "SCAN" }} {{ (cycle . "⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏" ) }} {{ counters . }} {{ bar . "❰" "█" "▓" "░" "❱" }} {{ percent . }} {{ green (speed . "%s p/s") }}`)
 		bar.SetMaxWidth(80)
@@ -254,7 +254,7 @@ func StreamingActiveScan(config StreamingActiveScanConfig) error {
 		workerPool.Stop()
 		bar.Finish()
 
-		fmt.Printf("\n[INF] Level %d complete. Ditemukan %d subdomain.\n\n", level, len(discoveredSubdomains))
+		fmt.Printf("\n[INF] Level %d complete. Found %d subdomains.\n\n", level, len(discoveredSubdomains))
 
 		// Setup for next level if recursive
 		if config.Recursive && (config.Depth == -1 || level < config.Depth) {

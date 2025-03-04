@@ -13,7 +13,7 @@ import (
 	"github.com/fkr00t/subcollector/internal/utils"
 )
 
-// ActiveScanConfig menampung konfigurasi untuk pemindaian aktif
+// ActiveScanConfig holds the configuration for active scanning
 type ActiveScanConfig struct {
 	Domain         string
 	WordlistPath   string
@@ -30,12 +30,12 @@ type ActiveScanConfig struct {
 	JsonOutputFile string
 }
 
-// ExecuteActiveScan menjalankan pemindaian aktif dengan konfigurasi yang diberikan
+// ExecuteActiveScan runs an active scan with the provided configuration
 func ExecuteActiveScan(config ActiveScanConfig) {
-	// Menampilkan header scan yang minimalis
+	// Display a minimalist scan header
 	fmt.Printf("\n» Scanning %s\n", config.Domain)
 
-	// Tampilkan flags yang aktif secara minimal tapi informatif
+	// Display active flags in a minimal but informative way
 	var activeFlags []string
 
 	if config.Takeover {
@@ -64,21 +64,21 @@ func ExecuteActiveScan(config ActiveScanConfig) {
 		activeFlags = append(activeFlags, fmt.Sprintf("wordlist:%s", config.WordlistPath))
 	}
 
-	// Tampilkan flags yang digunakan jika ada
+	// Display the flags used, if any
 	if len(activeFlags) > 0 {
 		fmt.Printf("  flags: %s\n", strings.Join(activeFlags, ", "))
 	}
 
 	fmt.Println()
 
-	// Tentukan ambang batas untuk beralih ke pendekatan streaming
-	const streamingThreshold = 10000 // 10k entri
+	// Define threshold for switching to streaming approach
+	const streamingThreshold = 10000 // 10k entries
 
-	// Cek ukuran wordlist
+	// Check wordlist size
 	var wordlistSize int
 	var err error
 
-	// Dapatkan ukuran wordlist
+	// Get wordlist size
 	if config.WordlistPath == "" {
 		wordlistSize = 114441
 	} else {
@@ -88,9 +88,9 @@ func ExecuteActiveScan(config ActiveScanConfig) {
 		}
 	}
 
-	// Pilih metode pemindaian berdasarkan ukuran
+	// Choose scanning method based on size
 	if wordlistSize > streamingThreshold {
-		// Tambahkan result processor
+		// Add result processor
 		streamingConfig := StreamingActiveScanConfig{
 			Domain:       config.Domain,
 			WordlistPath: config.WordlistPath,
@@ -115,19 +115,19 @@ func ExecuteActiveScan(config ActiveScanConfig) {
 			output.DisplayResult(result, config.ShowIP)
 		}
 
-		// Jalankan pemindaian streaming
+		// Run streaming scan
 		results := streamingActiveScan(streamingConfig)
 
-		// Rangkuman singkat
+		// Brief summary
 		fmt.Printf("\n» Found %d subdomains\n", len(results))
 
-		// Simpan hasil jika diminta
+		// Save results if requested
 		if !config.StreamResults && (config.OutputFile != "" || config.JsonOutputFile != "") {
 			output.SaveResults(config.OutputFile, config.JsonOutputFile, config.Domain, results)
 			fmt.Printf("» Results saved\n")
 		}
 	} else {
-		// Section untuk subdomain
+		// Section for subdomains
 		results := activeScan(config)
 
 		if results == nil {
@@ -135,10 +135,10 @@ func ExecuteActiveScan(config ActiveScanConfig) {
 			return
 		}
 
-		// Rangkuman singkat
+		// Brief summary
 		fmt.Printf("\n» Found %d subdomains\n", len(results))
 
-		// Simpan hasil jika diminta
+		// Save results if requested
 		if !config.StreamResults && (config.OutputFile != "" || config.JsonOutputFile != "") {
 			output.SaveResults(config.OutputFile, config.JsonOutputFile, config.Domain, results)
 			fmt.Printf("» Results saved\n")
@@ -146,27 +146,27 @@ func ExecuteActiveScan(config ActiveScanConfig) {
 	}
 }
 
-// Fungsi helper untuk menyimpan hasil dari pemindaian streaming
+// Helper function to save results from streaming scan
 func streamingActiveScan(config StreamingActiveScanConfig) []models.SubdomainResult {
-	// Ini adalah wrapper untuk fungsi StreamingActiveScan dari memory_efficient.go
+	// This is a wrapper for the StreamingActiveScan function from memory_efficient.go
 	var collectedResults []models.SubdomainResult
 	var resultsMutex sync.Mutex
 
-	// Buat processor yang menyimpan hasil
+	// Create a processor that saves the results
 	originalProcessor := config.ResultProcessor
 	config.ResultProcessor = func(result models.SubdomainResult) {
-		// Panggil processor asli jika ada
+		// Call the original processor if there is one
 		if originalProcessor != nil {
 			originalProcessor(result)
 		}
 
-		// Tambahkan ke hasil yang dikumpulkan
+		// Add to the collected results
 		resultsMutex.Lock()
 		collectedResults = append(collectedResults, result)
 		resultsMutex.Unlock()
 	}
 
-	// Simulasi dengan menggunakan active scan
+	// Simulate using active scan
 	tempConfig := ActiveScanConfig{
 		Domain:        config.Domain,
 		WordlistPath:  config.WordlistPath,
@@ -181,10 +181,10 @@ func streamingActiveScan(config StreamingActiveScanConfig) []models.SubdomainRes
 		StreamResults: false,
 	}
 
-	// Memanggil fungsi activeScan untuk sementara sampai StreamingActiveScan diimplementasikan
+	// Call activeScan function temporarily until StreamingActiveScan is implemented
 	temporaryResults := activeScan(tempConfig)
 
-	// Simulasi memanggil processor hasil
+	// Simulate calling the result processor
 	for _, result := range temporaryResults {
 		if config.ResultProcessor != nil {
 			config.ResultProcessor(result)
@@ -194,13 +194,13 @@ func streamingActiveScan(config StreamingActiveScanConfig) []models.SubdomainRes
 	return collectedResults
 }
 
-// activeScan melakukan enumerasi subdomain aktif menggunakan wordlist
-// Mencoba menemukan subdomain dengan menambahkan kata-kata dari wordlist ke domain
+// activeScan performs active subdomain enumeration using a wordlist
+// Tries to find subdomains by adding words from the wordlist to the domain
 func activeScan(config ActiveScanConfig) []models.SubdomainResult {
 	var wordlist []string
 	var err error
 
-	// Load atau download wordlist
+	// Load or download wordlist
 	if config.WordlistPath == "" {
 		defaultWordlistURL := "https://raw.githubusercontent.com/danielmiessler/SecLists/refs/heads/master/Discovery/DNS/subdomains-top1million-110000.txt"
 		fmt.Println("» Downloading wordlist...")
@@ -217,11 +217,11 @@ func activeScan(config ActiveScanConfig) []models.SubdomainResult {
 		}
 	}
 
-	// Proses resolver
+	// Process resolvers
 	var finalResolvers []string
 	finalResolvers = processResolvers(config.Resolvers)
 
-	// Siapkan HTTP client untuk pemeriksaan takeover
+	// Set up HTTP client for takeover checks
 	client := setupHTTPClient(config.Takeover, config.Proxy)
 
 	var results []models.SubdomainResult
@@ -229,7 +229,7 @@ func activeScan(config ActiveScanConfig) []models.SubdomainResult {
 	level := 1
 	toScan := []string{config.Domain}
 
-	// Channel untuk streaming hasil jika diaktifkan
+	// Channel for streaming results if enabled
 	var streamChan chan models.SubdomainResult
 	if config.StreamResults {
 		streamChan = setupStreamChannel(config.ShowIP)
@@ -237,7 +237,7 @@ func activeScan(config ActiveScanConfig) []models.SubdomainResult {
 		streamChan = nil
 	}
 
-	// Untuk tiap level rekursif
+	// For each recursive level
 	for len(toScan) > 0 && (config.Depth == -1 || level <= config.Depth) {
 		if level > 1 || config.Recursive {
 			fmt.Printf("\n» Level %d: %d domains\n", level, len(toScan))
@@ -253,7 +253,7 @@ func activeScan(config ActiveScanConfig) []models.SubdomainResult {
 			streamChan,
 		)
 
-		// Proses hasil level ini untuk level berikutnya jika rekursif
+		// Process results of this level for the next level if recursive
 		results = append(results, levelResults...)
 		if config.Recursive && (config.Depth == -1 || level < config.Depth) {
 			toScan = []string{}
@@ -273,7 +273,7 @@ func activeScan(config ActiveScanConfig) []models.SubdomainResult {
 	return results
 }
 
-// processResolvers memproses resolver yang diberikan
+// processResolvers processes the given resolvers
 func processResolvers(resolvers []string) []string {
 	var finalResolvers []string
 	if len(resolvers) == 1 && utils.IsResolverFile(resolvers[0]) {
@@ -290,7 +290,7 @@ func processResolvers(resolvers []string) []string {
 	return finalResolvers
 }
 
-// setupHTTPClient menyiapkan HTTP client untuk pemeriksaan takeover
+// setupHTTPClient sets up an HTTP client for takeover checks
 func setupHTTPClient(takeover bool, proxy string) *http.Client {
 	if !takeover {
 		return nil
@@ -310,11 +310,11 @@ func setupHTTPClient(takeover bool, proxy string) *http.Client {
 	return &http.Client{Timeout: 5 * time.Second}
 }
 
-// setupStreamChannel menyiapkan channel untuk streaming hasil
+// setupStreamChannel sets up a channel for streaming results
 func setupStreamChannel(showIP bool) chan models.SubdomainResult {
 	streamChan := make(chan models.SubdomainResult, 100)
 
-	// Set up goroutine untuk memproses hasil streaming
+	// Set up goroutine to process streaming results
 	go func() {
 		for result := range streamChan {
 			output.DisplayResult(result, showIP)
@@ -324,7 +324,7 @@ func setupStreamChannel(showIP bool) chan models.SubdomainResult {
 	return streamChan
 }
 
-// scanLevel melakukan pemindaian untuk satu level rekursi
+// scanLevel performs scanning for one recursion level
 func scanLevel(
 	toScan []string,
 	wordlist []string,
@@ -339,21 +339,21 @@ func scanLevel(
 	subdomainChan := make(chan string, 100)
 	resultChan := make(chan models.SubdomainResult, 100)
 
-	// Tampilkan total task yang akan dikerjakan
+	// Display total tasks to be performed
 	totalTasks := len(toScan) * len(wordlist)
 	fmt.Printf("» Checking %d subdomains\n", totalTasks)
 
-	// Buat progress bar
+	// Create progress bar
 	bar := utils.CreateProgressBar(totalTasks)
 
-	// Setup result writer untuk tampilan real-time
+	// Setup result writer for real-time display
 	var resultWriter *output.ResultWriter
 	resultWriter = output.NewResultWriter(bar, config.ShowIP)
 
-	// Mulai progress bar
+	// Start progress bar
 	bar.Start()
 
-	// Buat worker pool
+	// Create worker pool
 	for i := 0; i < config.NumWorkers; i++ {
 		wg.Add(1)
 		go Worker(
@@ -371,7 +371,7 @@ func scanLevel(
 		)
 	}
 
-	// Feed subdomain ke worker
+	// Feed subdomains to workers
 	go func() {
 		for _, target := range toScan {
 			for _, word := range wordlist {
@@ -382,7 +382,7 @@ func scanLevel(
 		close(subdomainChan)
 	}()
 
-	// Kumpulkan hasil
+	// Collect results
 	go func() {
 		wg.Wait()
 		close(resultChan)
@@ -391,7 +391,7 @@ func scanLevel(
 		}
 	}()
 
-	// Proses dan simpan hasil untuk level ini
+	// Process and save results for this level
 	for result := range resultChan {
 		levelResults = append(levelResults, result)
 	}

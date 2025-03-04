@@ -8,21 +8,21 @@ import (
 	"github.com/fkr00t/subcollector/internal/models"
 )
 
-// TakeoverPatterns adalah peta pola yang digunakan untuk mendeteksi potensi pengambilalihan subdomain
-// Setiap entri mewakili layanan dan pola string yang menunjukkan kerentanan
+// TakeoverPatterns is a map of patterns used to detect potential subdomain takeovers
+// Each entry represents a service and a string pattern that indicates vulnerability
 var TakeoverPatterns = map[string]string{
 	// Cloud storage
 	"aws":                  "NoSuchBucket",
 	"aws_s3":               "The specified bucket does not exist",
-	"azure":                "The specified container does not exist", // Diperbarui dari "The specified blob does not exist"
+	"azure":                "The specified container does not exist", // Updated from "The specified blob does not exist"
 	"azure_blob":           "404 The specified container does not exist",
-	"google_cloud_storage": "The specified bucket does not exist", // Diperbarui dari "The requested URL was not found on this server"
+	"google_cloud_storage": "The specified bucket does not exist", // Updated from "The requested URL was not found on this server"
 	"digitalocean_spaces":  "NoSuchBucket",
-	"backblaze_b2":         "No such bucket",                       // Ditambahkan
-	"oracle_cloud":         "The bucket does not exist.",           // Ditambahkan
-	"alibaba_cloud_oss":    "The specified bucket does not exist.", // Ditambahkan
-	"tencent_cloud_cos":    "The specified bucket does not exist.", // Ditambahkan
-	"ibm_cloud_storage":    "The specified bucket does not exist.", // Ditambahkan
+	"backblaze_b2":         "No such bucket",                       // Added
+	"oracle_cloud":         "The bucket does not exist.",           // Added
+	"alibaba_cloud_oss":    "The specified bucket does not exist.", // Added
+	"tencent_cloud_cos":    "The specified bucket does not exist.", // Added
+	"ibm_cloud_storage":    "The specified bucket does not exist.", // Added
 
 	// Hosting platforms
 	"github":       "There isn't a GitHub Pages site here",
@@ -78,8 +78,8 @@ var TakeoverPatterns = map[string]string{
 	"getresponse": "This landing page is unavailable or doesn't exist",
 }
 
-// CheckTakeover memeriksa apakah subdomain rentan terhadap pengambilalihan
-// Mengirim permintaan HTTP dan memeriksa pola yang menunjukkan kemungkinan pengambilalihan
+// CheckTakeover checks if a subdomain is vulnerable to takeover
+// Sends an HTTP request and checks for patterns indicating potential takeover
 func CheckTakeover(client *http.Client, result *models.SubdomainResult) {
 	resp, err := client.Get("http://" + result.Subdomain)
 	if err == nil {

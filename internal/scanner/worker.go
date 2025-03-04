@@ -11,39 +11,39 @@ import (
 	"github.com/fkr00t/subcollector/internal/utils"
 )
 
-// Worker adalah fungsi worker konkuren untuk pemindaian aktif
-// Memproses subdomain dari channel dan mengirim hasil ke channel lain
-// Setiap worker menangani pencarian DNS dan pemeriksaan takeover opsional
+// Worker is a concurrent worker function for active scanning
+// Processes subdomains from a channel and sends results to another channel
+// Each worker handles DNS lookups and optional takeover checks
 func Worker(
-	subdomainChan <-chan string, // Channel untuk menerima subdomain untuk diperiksa
-	resultChan chan<- models.SubdomainResult, // Channel untuk mengirim hasil
-	resolvers []string, // Daftar resolver DNS yang digunakan
-	cache *models.DNSCache, // Cache untuk menghindari pencarian duplikat
-	client *http.Client, // HTTP client untuk deteksi takeover
-	bar *pb.ProgressBar, // Progress bar untuk umpan balik visual
-	resultWriter *output.ResultWriter, // Writer untuk tampilan hasil real-time
-	wg *sync.WaitGroup, // WaitGroup untuk sinkronisasi
-	showIP bool, // Apakah menyertakan alamat IP dalam hasil
-	rateLimit int, // Rate limiting dalam milidetik antara permintaan
-	streamOutput chan<- models.SubdomainResult, // Channel untuk streaming hasil
+	subdomainChan <-chan string, // Channel to receive subdomains to check
+	resultChan chan<- models.SubdomainResult, // Channel to send results
+	resolvers []string, // List of DNS resolvers to use
+	cache *models.DNSCache, // Cache to avoid duplicate lookups
+	client *http.Client, // HTTP client for takeover detection
+	bar *pb.ProgressBar, // Progress bar for visual feedback
+	resultWriter *output.ResultWriter, // Writer for real-time result display
+	wg *sync.WaitGroup, // WaitGroup for synchronization
+	showIP bool, // Whether to include IP addresses in results
+	rateLimit int, // Rate limiting in milliseconds between requests
+	streamOutput chan<- models.SubdomainResult, // Channel for streaming results
 ) {
 	defer wg.Done()
 
 	for subdomain := range subdomainChan {
 		var result models.SubdomainResult
 
-		// Cek cache dulu
+		// Check cache first
 		if cachedResult, ok := cache.Load(subdomain); ok {
-			// Gunakan hasil DNS cache jika tersedia
+			// Use cached DNS result if available
 			if cachedResult.Found {
 				result = models.SubdomainResult{Subdomain: subdomain, IPs: cachedResult.IPs}
 				if client != nil {
-					// Periksa potensi takeover
+					// Check for potential takeover
 					CheckTakeover(client, &result)
 				}
 				resultChan <- result
 
-				// Tulis hasil secara real-time
+				// Write results in real-time
 				if resultWriter != nil {
 					resultWriter.WriteResult(result)
 				}
@@ -56,7 +56,7 @@ func Worker(
 			var addresses []string
 			var err error
 			if len(resolvers) > 0 {
-				// Coba setiap resolver sampai satu berhasil
+				// Try each resolver until one succeeds
 				for _, resolver := range resolvers {
 					addresses, err = utils.LookupWithResolver(subdomain, resolver)
 					if err == nil {
@@ -64,24 +64,24 @@ func Worker(
 					}
 				}
 			} else {
-				// Gunakan resolver default sistem
+				// Use default system resolver
 				addresses, err = utils.DefaultLookup(subdomain)
 			}
 
 			if err == nil {
-				// Subdomain ada
+				// Subdomain exists
 				cache.Store(subdomain, models.DNSResult{Found: true, IPs: addresses})
 				result = models.SubdomainResult{Subdomain: subdomain}
 				if showIP {
 					result.IPs = addresses
 				}
 				if client != nil {
-					// Periksa potensi takeover
+					// Check for potential takeover
 					CheckTakeover(client, &result)
 				}
 				resultChan <- result
 
-				// Tulis hasil secara real-time
+				// Write results in real-time
 				if resultWriter != nil {
 					resultWriter.WriteResult(result)
 				}
@@ -90,7 +90,7 @@ func Worker(
 					streamOutput <- result
 				}
 			} else {
-				// Subdomain tidak ada
+				// Subdomain doesn't exist
 				cache.Store(subdomain, models.DNSResult{Found: false})
 			}
 		}

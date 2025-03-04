@@ -15,16 +15,16 @@ var (
 	red    = color.New(color.FgRed).SprintFunc()
 )
 
-// ResultWriter mengelola output real-time dari hasil sambil menjaga progress bar tetap utuh
+// ResultWriter manages real-time output of results while maintaining the progress bar
 type ResultWriter struct {
 	bar           *pb.ProgressBar
 	mutex         *sync.Mutex
 	results       []models.SubdomainResult
 	showIP        bool
-	foundTakeover bool // Untuk melacak jika ada takeover yang ditemukan
+	foundTakeover bool // Tracks if a takeover is detected
 }
 
-// NewResultWriter membuat instance baru ResultWriter
+// NewResultWriter creates a new instance of ResultWriter
 func NewResultWriter(bar *pb.ProgressBar, showIP bool) *ResultWriter {
 	return &ResultWriter{
 		bar:           bar,
@@ -35,51 +35,52 @@ func NewResultWriter(bar *pb.ProgressBar, showIP bool) *ResultWriter {
 	}
 }
 
-// WriteResult menulis hasil baru sambil mempertahankan progress bar
+// WriteResult writes a new result while keeping the progress bar intact
 func (rw *ResultWriter) WriteResult(result models.SubdomainResult) {
 	rw.mutex.Lock()
 	defer rw.mutex.Unlock()
 
-	// Simpan hasil
+	// Store result
 	rw.results = append(rw.results, result)
 
-	// Update flag takeover jika ditemukan
+	// Update takeover flag if detected
 	if result.Takeover != "" {
 		rw.foundTakeover = true
 	}
 
-	// Simpan status progress bar saat ini
+	// Save the current progress bar status
 	barString := rw.bar.String()
 
-	// Bersihkan baris
+	// Clear the line
 	fmt.Print("\r\033[K")
 
-	// Print hasil - minimalist style
+	// Print result - minimalist style
 	DisplayResult(result, rw.showIP)
 
-	// Kembalikan progress bar pada baris berikutnya
+	// Restore the progress bar on the next line
 	fmt.Print(barString)
 }
 
-// GetResults mengembalikan semua hasil yang disimpan
+// GetResults returns all stored results
 func (rw *ResultWriter) GetResults() []models.SubdomainResult {
 	rw.mutex.Lock()
 	defer rw.mutex.Unlock()
 	return rw.results
 }
 
+// DisplayResult formats and prints a single subdomain result
 func DisplayResult(result models.SubdomainResult, showIP bool) {
 	subdomain := cyan(result.Subdomain)
 
 	if result.Takeover != "" {
-		// Prioritaskan tampilan takeover dengan flag jelas
+		// Prioritize displaying takeover alerts with a clear flag
 		if showIP && len(result.IPs) > 0 {
 			fmt.Printf(" !  %s (%s) | %s\n", subdomain, result.IPs[0], red("Possible Takeover: "+result.Takeover))
 		} else {
 			fmt.Printf(" !  %s | %s\n", subdomain, red("Possible Takeover: "+result.Takeover))
 		}
 	} else {
-		// Display normal untuk subdomain tanpa takeover
+		// Normal display for subdomains without takeover warnings
 		if showIP && len(result.IPs) > 0 {
 			fmt.Printf(" +  %s → %s\n", subdomain, result.IPs[0])
 		} else {

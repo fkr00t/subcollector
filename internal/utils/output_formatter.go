@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// OutputColors mengatur warna-warna yang digunakan untuk output
+// OutputColors configures the colors used for output
 var (
 	InfoColor      = color.New(color.FgCyan)
 	InfoBoldColor  = color.New(color.FgCyan, color.Bold)
@@ -20,7 +20,7 @@ var (
 	SubtleColor    = color.New(color.FgWhite, color.Faint)
 )
 
-// FormatterLevel mendefinisikan tingkat kepentingan output untuk formatter
+// FormatterLevel defines the importance level of output for the formatter
 type FormatterLevel int
 
 const (
@@ -31,7 +31,7 @@ const (
 	LevelSuccessFormat
 )
 
-// OutputSymbol mengembalikan simbol untuk tingkat output
+// OutputSymbol returns a symbol for the output level
 func OutputSymbol(level FormatterLevel) string {
 	switch level {
 	case LevelNormalFormat:
@@ -49,7 +49,7 @@ func OutputSymbol(level FormatterLevel) string {
 	}
 }
 
-// PrintFormatted mencetak pesan dengan format dan warna berdasarkan tingkat
+// PrintFormatted prints a message with format and color based on level
 func PrintFormatted(message string, level FormatterLevel) {
 	symbol := OutputSymbol(level)
 
@@ -72,7 +72,7 @@ func PrintFormatted(message string, level FormatterLevel) {
 	colorPrinter.Printf(" %s %s\n", symbol, message)
 }
 
-// PrintSectionHeader mencetak header untuk bagian dengan format yang menarik
+// PrintSectionHeader prints a header for a section with an attractive format
 func PrintSectionHeader(title string) {
 	width := 80
 	padding := (width - len(title) - 4) / 2
@@ -94,21 +94,21 @@ func PrintSectionHeader(title string) {
 	fmt.Println()
 }
 
-// PrintResultSummary menampilkan ringkasan hasil pemindaian dengan format yang jelas
+// PrintResultSummary displays a summary of scan results with a clear format
 func PrintResultSummary(domain string, totalChecked, found int, duration string) {
 	fmt.Println()
-	HighlightColor.Printf(" RINGKASAN PEMINDAIAN \n\n")
+	HighlightColor.Printf(" SCAN SUMMARY \n\n")
 
 	InfoColor.Printf(" %-15s: ", "Domain")
 	fmt.Println(domain)
 
-	InfoColor.Printf(" %-15s: ", "Total Diperiksa")
+	InfoColor.Printf(" %-15s: ", "Total Checked")
 	fmt.Println(totalChecked)
 
-	InfoColor.Printf(" %-15s: ", "Subdomain")
+	InfoColor.Printf(" %-15s: ", "Subdomains")
 	SuccessBold.Println(found)
 
-	InfoColor.Printf(" %-15s: ", "Waktu")
+	InfoColor.Printf(" %-15s: ", "Time")
 	fmt.Println(duration)
 
 	fmt.Println()
@@ -116,29 +116,29 @@ func PrintResultSummary(domain string, totalChecked, found int, duration string)
 	fmt.Println()
 }
 
-// PrintProcessStep mencetak langkah proses dengan nomor langkah
+// PrintProcessStep prints a process step with a step number
 func PrintProcessStep(stepNum int, stepDesc string) {
 	InfoBoldColor.Printf(" %d. ", stepNum)
 	fmt.Println(stepDesc)
 }
 
-// PrintStageBegin mencetak awal dari tahap proses
+// PrintStageBegin prints the beginning of a process stage
 func PrintStageBegin(stageName string) {
-	InfoBoldColor.Printf(" ▶ Memulai: %s\n", stageName)
+	InfoBoldColor.Printf(" ▶ Starting: %s\n", stageName)
 }
 
-// PrintStageEnd mencetak akhir dari tahap proses
+// PrintStageEnd prints the end of a process stage
 func PrintStageEnd(stageName string, success bool) {
 	if success {
-		SuccessColor.Printf(" ✓ Selesai: %s\n", stageName)
+		SuccessColor.Printf(" ✓ Completed: %s\n", stageName)
 	} else {
-		ErrorColor.Printf(" ✗ Gagal: %s\n", stageName)
+		ErrorColor.Printf(" ✗ Failed: %s\n", stageName)
 	}
 }
 
-// PrintSubdomainResult mencetak hasil subdomain dengan informasi tambahan
+// PrintSubdomainResult prints a subdomain result with additional information
 func PrintSubdomainResult(subdomain string, ips []string, takeover string, showIP bool) {
-	// Cek apakah subdomain ditemukan dan takeover terdeteksi
+	// Check if subdomain was found and takeover detected
 	if takeover != "" {
 		WarningBold.Printf(" [!] ")
 		fmt.Printf("%s ", subdomain)
@@ -148,13 +148,13 @@ func PrintSubdomainResult(subdomain string, ips []string, takeover string, showI
 		fmt.Println(subdomain)
 	}
 
-	// Tampilkan IP jika diperlukan
+	// Show IP if needed
 	if showIP && len(ips) > 0 {
 		SubtleColor.Printf("     IP: %s\n", strings.Join(ips, ", "))
 	}
 }
 
-// FormatProgressBar memformat dan mencetak progress bar
+// FormatProgressBar formats and prints a progress bar
 func FormatProgressBar(current, total int, prefix string, width int) {
 	percent := float64(current) * 100 / float64(total)
 	filled := int(float64(width) * float64(current) / float64(total))
@@ -167,7 +167,7 @@ func FormatProgressBar(current, total int, prefix string, width int) {
 	}
 }
 
-// FormatSubdomain memformat subdomain dengan pemberian highlight pada prefix
+// FormatSubdomain formats a subdomain with highlighting on the prefix
 func FormatSubdomain(subdomain, domain string) string {
 	if strings.HasSuffix(subdomain, "."+domain) {
 		prefix := strings.TrimSuffix(subdomain, "."+domain)

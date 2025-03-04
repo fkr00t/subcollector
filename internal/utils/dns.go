@@ -6,9 +6,9 @@ import (
 	"strings"
 )
 
-// LookupWithResolver melakukan pencarian DNS menggunakan resolver tertentu
-// Ini memungkinkan kontrol lebih atas proses resolusi DNS
-// Mengembalikan slice alamat IP dan error yang ditemui
+// LookupWithResolver performs DNS lookup using a specific resolver
+// This allows more control over the DNS resolution process
+// Returns a slice of IP addresses and any errors encountered
 func LookupWithResolver(domain string, resolver string) ([]string, error) {
 	r := &net.Resolver{
 		PreferGo: true,
@@ -20,13 +20,13 @@ func LookupWithResolver(domain string, resolver string) ([]string, error) {
 	return r.LookupHost(context.Background(), domain)
 }
 
-// DefaultLookup melakukan pencarian DNS menggunakan resolver default sistem
+// DefaultLookup performs DNS lookup using the system's default resolver
 func DefaultLookup(domain string) ([]string, error) {
 	return net.LookupHost(domain)
 }
 
-// CleanDomain menghapus prefiks umum dan whitespace dari domain
-// Ini memastikan format domain yang konsisten untuk pemrosesan
+// CleanDomain removes common prefixes and whitespace from a domain
+// This ensures consistent domain format for processing
 func CleanDomain(domain string) string {
 	domain = strings.TrimSpace(domain)
 	domain = strings.TrimPrefix(domain, "http://")
@@ -35,7 +35,7 @@ func CleanDomain(domain string) string {
 	return domain
 }
 
-// IsResolverFile memeriksa apakah string resolver adalah file
+// IsResolverFile checks if a resolver string is a file
 func IsResolverFile(resolver string) bool {
 	return strings.Contains(resolver, ".") && !strings.Contains(resolver, ",")
 }

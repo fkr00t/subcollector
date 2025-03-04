@@ -5,10 +5,10 @@ import (
 	"sync"
 )
 
-// WorkerTask mewakili pekerjaan yang akan dilakukan.
+// WorkerTask represents a job to be performed.
 type WorkerTask func() interface{}
 
-// WorkerPool mengimplementasikan sebuah pool worker yang dapat digunakan kembali.
+// WorkerPool implements a reusable worker pool.
 type WorkerPool struct {
 	tasksChan     chan WorkerTask
 	resultsChan   chan interface{}
@@ -19,7 +19,7 @@ type WorkerPool struct {
 	isInitialized bool
 }
 
-// NewWorkerPool membuat instance baru WorkerPool dengan jumlah worker yang ditentukan.
+// NewWorkerPool creates a new WorkerPool instance with the specified number of workers.
 func NewWorkerPool(numWorkers int, bufferSize int) *WorkerPool {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &WorkerPool{
@@ -31,7 +31,7 @@ func NewWorkerPool(numWorkers int, bufferSize int) *WorkerPool {
 	}
 }
 
-// Start memulai worker pool.
+// Start initiates the worker pool.
 func (wp *WorkerPool) Start() {
 	if wp.isInitialized {
 		return
@@ -44,7 +44,7 @@ func (wp *WorkerPool) Start() {
 	wp.isInitialized = true
 }
 
-// worker adalah goroutine yang menangani tasks.
+// worker is a goroutine that handles tasks.
 func (wp *WorkerPool) worker() {
 	defer wp.wg.Done()
 
@@ -68,7 +68,7 @@ func (wp *WorkerPool) worker() {
 	}
 }
 
-// AddTask menambahkan task ke worker pool.
+// AddTask adds a task to the worker pool.
 func (wp *WorkerPool) AddTask(task WorkerTask) {
 	select {
 	case <-wp.ctx.Done():
@@ -77,12 +77,12 @@ func (wp *WorkerPool) AddTask(task WorkerTask) {
 	}
 }
 
-// Results mengembalikan channel yang menerima hasil.
+// Results returns a channel that receives results.
 func (wp *WorkerPool) Results() <-chan interface{} {
 	return wp.resultsChan
 }
 
-// Stop menghentikan worker pool dan menunggu sampai semua worker selesai.
+// Stop stops the worker pool and waits until all workers are done.
 func (wp *WorkerPool) Stop() {
 	wp.cancel() // Signal workers to stop
 	close(wp.tasksChan)
@@ -91,8 +91,8 @@ func (wp *WorkerPool) Stop() {
 	wp.isInitialized = false
 }
 
-// StopAndDrain menghentikan worker pool, menunggu sampai semua workers selesai,
-// dan mengembalikan semua hasil yang belum dikonsumsi.
+// StopAndDrain stops the worker pool, waits until all workers are done,
+// and returns all unconsumed results.
 func (wp *WorkerPool) StopAndDrain() []interface{} {
 	wp.Stop()
 

@@ -11,7 +11,7 @@ import (
 	"github.com/projectdiscovery/subfinder/v2/pkg/runner"
 )
 
-// PassiveScanConfig menampung konfigurasi untuk pemindaian pasif
+// PassiveScanConfig holds configuration for passive scanning
 type PassiveScanConfig struct {
 	Domain         string
 	ShowIP         bool
@@ -20,12 +20,12 @@ type PassiveScanConfig struct {
 	JsonOutputFile string
 }
 
-// ExecutePassiveScan menjalankan pemindaian pasif dengan konfigurasi yang diberikan
+// ExecutePassiveScan runs a passive scan with the provided configuration
 func ExecutePassiveScan(config PassiveScanConfig) {
-	fmt.Printf("[INF] Memulai pemindaian pasif untuk %s...\n\n", config.Domain)
-	//utils.GlobalLogger.Info("Memulai pemindaian pasif untuk %s...", config.Domain)
+	fmt.Printf("[INF] Starting passive scan for %s...\n\n", config.Domain)
+	//utils.GlobalLogger.Info("Starting passive scan for %s...", config.Domain)
 
-	// Siapkan channel untuk streaming hasil jika diaktifkan
+	// Set up channel for streaming results if enabled
 	var resultsChan chan models.SubdomainResult
 	var doneChan chan bool
 
@@ -44,12 +44,12 @@ func ExecutePassiveScan(config PassiveScanConfig) {
 
 	results, err := passiveScan(config.Domain, config.ShowIP)
 	if err != nil {
-		fmt.Printf("[ERR] Pemindaian pasif gagal untuk %s: %v\n", config.Domain, err)
-		//utils.GlobalLogger.Error("Pemindaian pasif gagal untuk %s: %v", config.Domain, err)
+		fmt.Printf("[ERR] Passive scan failed for %s: %v\n", config.Domain, err)
+		//utils.GlobalLogger.Error("Passive scan failed for %s: %v", config.Domain, err)
 		return
 	}
 
-	// Stream hasil jika diaktifkan
+	// Stream results if enabled
 	if config.StreamResults && resultsChan != nil {
 		for _, result := range results {
 			resultsChan <- result
@@ -61,23 +61,23 @@ func ExecutePassiveScan(config PassiveScanConfig) {
 			if config.JsonOutputFile != "" {
 				outputFile = config.JsonOutputFile
 			}
-			fmt.Printf("[INF] Hasil disimpan ke %s\n", outputFile)
+			fmt.Printf("[INF] Results saved to %s\n", outputFile)
 		}
 	} else {
-		// Tampilkan hasil
+		// Display results
 		for _, result := range results {
 			output.DisplayResult(result, config.ShowIP)
 		}
 
-		// Simpan hasil jika diminta
+		// Save results if requested
 		if (config.OutputFile != "" || config.JsonOutputFile != "") && !config.StreamResults {
 			output.SaveResults(config.OutputFile, config.JsonOutputFile, config.Domain, results)
 		}
 	}
 }
 
-// passiveScan melakukan enumerasi subdomain pasif menggunakan subfinder
-// Menggunakan sumber eksternal untuk menemukan subdomain tanpa interaksi langsung dengan target
+// passiveScan performs passive subdomain enumeration using subfinder
+// Uses external sources to find subdomains without direct interaction with the target
 func passiveScan(domain string, showIP bool) ([]models.SubdomainResult, error) {
 	stopChan := make(chan bool)
 	go utils.ShowLoading(stopChan)

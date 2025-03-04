@@ -8,9 +8,9 @@ import (
 	"github.com/fkr00t/subcollector/internal/models"
 )
 
-// SaveResults menyimpan hasil pemindaian ke file
-// Mendukung format teks dan JSON
-// Mengembalikan error jika ada masalah
+// SaveResults saves scan results to a file
+// Supports text and JSON formats
+// Returns an error if an issue occurs
 func SaveResults(output, jsonOutput, domain string, results []models.SubdomainResult) error {
 	outputFile := output
 	if jsonOutput != "" {
@@ -22,7 +22,7 @@ func SaveResults(output, jsonOutput, domain string, results []models.SubdomainRe
 
 	file, err := os.Create(outputFile)
 	if err != nil {
-		fmt.Println("[ERR] Gagal membuat file output!")
+		fmt.Println("[ERR] Failed to create output file!")
 		return err
 	}
 	defer file.Close()
@@ -34,14 +34,14 @@ func SaveResults(output, jsonOutput, domain string, results []models.SubdomainRe
 		}
 		jsonData, err := json.MarshalIndent(outputData, "", "    ")
 		if err != nil {
-			fmt.Println("[ERR] Gagal membuat output JSON!")
+			fmt.Println("[ERR] Failed to generate JSON output!")
 			return err
 		}
 		_, err = file.Write(jsonData)
 		if err != nil {
 			return err
 		}
-		fmt.Printf("[INF] Hasil disimpan ke %s (format JSON)\n", outputFile)
+		fmt.Printf("[INF] Results saved to %s (JSON format)\n", outputFile)
 	} else {
 		for _, result := range results {
 			_, err := file.WriteString(fmt.Sprintf("%s\n", result.Subdomain))
@@ -49,24 +49,24 @@ func SaveResults(output, jsonOutput, domain string, results []models.SubdomainRe
 				return err
 			}
 		}
-		fmt.Printf("[INF] Hasil disimpan ke %s (format teks)\n", outputFile)
+		fmt.Printf("[INF] Results saved to %s (text format)\n", outputFile)
 	}
 
 	return nil
 }
 
-// BatchSaveResultsJSON menyimpan hasil dalam batch untuk menghindari menyimpan semua hasil di memori
-// Fungsi ini memproses channel hasil dan menulisnya langsung ke file JSON
+// BatchSaveResultsJSON saves results in batches to avoid storing all results in memory
+// This function processes the result channel and writes directly to a JSON file
 func BatchSaveResultsJSON(outputFile, domain string, resultsChan <-chan models.SubdomainResult, doneChan chan<- bool) {
 	file, err := os.Create(outputFile)
 	if err != nil {
-		fmt.Println("[ERR] Gagal membuat file output!")
+		fmt.Println("[ERR] Failed to create output file!")
 		doneChan <- false
 		return
 	}
 	defer file.Close()
 
-	// Inisialisasi array JSON
+	// Initialize JSON array
 	file.WriteString(fmt.Sprintf("{\n  \"domain\": \"%s\",\n  \"subdomains\": [\n", domain))
 
 	first := true
@@ -85,24 +85,24 @@ func BatchSaveResultsJSON(outputFile, domain string, resultsChan <-chan models.S
 		file.WriteString("    " + string(jsonData))
 	}
 
-	// Tutup array JSON dan objek
+	// Close JSON array and object
 	file.WriteString("\n  ]\n}")
 
 	doneChan <- true
 }
 
-// BatchSaveResultsText menyimpan hasil dalam batch untuk menghindari menyimpan semua hasil di memori
-// Fungsi ini memproses channel hasil dan menulisnya langsung ke file teks
+// BatchSaveResultsText saves results in batches to avoid storing all results in memory
+// This function processes the result channel and writes directly to a text file
 func BatchSaveResultsText(outputFile string, resultsChan <-chan models.SubdomainResult, doneChan chan<- bool) {
 	file, err := os.Create(outputFile)
 	if err != nil {
-		fmt.Println("[ERR] Gagal membuat file output!")
+		fmt.Println("[ERR] Failed to create output file!")
 		doneChan <- false
 		return
 	}
 	defer file.Close()
 
-	// Format teks sederhana
+	// Simple text format
 	for result := range resultsChan {
 		file.WriteString(fmt.Sprintf("%s\n", result.Subdomain))
 	}

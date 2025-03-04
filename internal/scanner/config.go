@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// BackoffConfig konfigurasi untuk algoritma backoff
+// BackoffConfig configuration for the backoff algorithm
 type BackoffConfig struct {
 	Enabled       bool
 	BaseDelay     time.Duration
@@ -16,12 +16,12 @@ type BackoffConfig struct {
 	FailThreshold int
 }
 
-// StreamingActiveScanConfig konfigurasi untuk pemindaian aktif dengan streaming
-// StreamingActiveScanConfig konfigurasi untuk pemindaian aktif dengan streaming
+// StreamingActiveScanConfig configuration for active scanning with streaming
+// StreamingActiveScanConfig configuration for active scanning with streaming
 type StreamingActiveScanConfig struct {
 	Domain          string
 	WordlistPath    string
-	WordlistReader  io.Reader // Ubah dari interface{} menjadi io.Reader
+	WordlistReader  io.Reader // Changed from interface{} to io.Reader
 	Resolvers       []string
 	BackoffConfig   BackoffConfig
 	Recursive       bool

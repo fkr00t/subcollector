@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-// ExponentialBackoff implementasi algoritma backoff eksponensial dengan jitter
-// untuk rate limiting yang adaptif
+// ExponentialBackoff implementation of exponential backoff algorithm with jitter
+// for adaptive rate limiting
 type ExponentialBackoff struct {
 	baseDelay    time.Duration
 	maxDelay     time.Duration
@@ -20,7 +20,7 @@ type ExponentialBackoff struct {
 	rnd          *rand.Rand
 }
 
-// NewExponentialBackoff membuat instance baru dari ExponentialBackoff
+// NewExponentialBackoff creates a new instance of ExponentialBackoff
 func NewExponentialBackoff(baseDelay, maxDelay time.Duration, factor, jitter float64) *ExponentialBackoff {
 	return &ExponentialBackoff{
 		baseDelay:    baseDelay,
@@ -33,7 +33,7 @@ func NewExponentialBackoff(baseDelay, maxDelay time.Duration, factor, jitter flo
 	}
 }
 
-// NextDelay menghitung penundaan berikutnya berdasarkan target dan jumlah percobaan
+// NextDelay calculates the next delay based on target and number of attempts
 func (b *ExponentialBackoff) NextDelay(target string) time.Duration {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
@@ -60,40 +60,40 @@ func (b *ExponentialBackoff) NextDelay(target string) time.Duration {
 	return time.Duration(delay)
 }
 
-// Reset mengatur ulang counter percobaan untuk target tertentu
+// Reset resets the attempt counter for a specific target
 func (b *ExponentialBackoff) Reset(target string) {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 	b.attemptsMap[target] = 0
 }
 
-// ResetAll mengatur ulang semua counter percobaan
+// ResetAll resets all attempt counters
 func (b *ExponentialBackoff) ResetAll() {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 	b.attemptsMap = make(map[string]int)
 }
 
-// GetRequestCount mengembalikan jumlah permintaan yang dibuat ke target tertentu
+// GetRequestCount returns the number of requests made to a specific target
 func (b *ExponentialBackoff) GetRequestCount(target string) int {
 	b.mutex.RLock()
 	defer b.mutex.RUnlock()
 	return b.targetCounts[target]
 }
 
-// IsRateLimited memeriksa apakah target melebihi batas permintaan
-// dan memerlukan penundaan yang lebih lama
+// IsRateLimited checks if a target exceeds the request limit
+// and requires a longer delay
 func (b *ExponentialBackoff) IsRateLimited(target string, threshold int) bool {
 	b.mutex.RLock()
 	defer b.mutex.RUnlock()
 	return b.attemptsMap[target] >= threshold
 }
 
-// AdaptiveDelay menghitung penundaan berdasarkan respons target
-// Jika terjadi kegagalan, backoff meningkat. Jika berhasil, backoff berkurang secara bertahap.
+// AdaptiveDelay calculates delay based on target response
+// If failure occurs, backoff increases. If successful, backoff gradually decreases.
 func (b *ExponentialBackoff) AdaptiveDelay(target string, success bool) time.Duration {
 	if success {
-		// Jika berhasil, kurangi counter percobaan (dengan batas bawah 0)
+		// If successful, reduce attempt counter (with lower bound of 0)
 		b.mutex.Lock()
 		if b.attemptsMap[target] > 0 {
 			b.attemptsMap[target]--
@@ -101,11 +101,11 @@ func (b *ExponentialBackoff) AdaptiveDelay(target string, success bool) time.Dur
 		attempts := b.attemptsMap[target]
 		b.mutex.Unlock()
 
-		// Hitung penundaan berdasarkan counter yang dikurangi
+		// Calculate delay based on reduced counter
 		delay := float64(b.baseDelay) * math.Pow(b.factor, float64(attempts))
 		return time.Duration(delay)
 	} else {
-		// Jika gagal, gunakan penundaan eksponensial normal
+		// If failed, use normal exponential backoff
 		return b.NextDelay(target)
 	}
 }
