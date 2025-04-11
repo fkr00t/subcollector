@@ -1,11 +1,15 @@
 package scanner
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
+	"os/signal"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/fkr00t/subcollector/internal/models"
@@ -350,6 +354,30 @@ func scanLevel(
 	var resultWriter *output.ResultWriter
 	resultWriter = output.NewResultWriter(bar, config.ShowIP)
 
+	// Handle interrupt signal for clean exit
+	interruptChan := make(chan os.Signal, 1)
+	signal.Notify(interruptChan, os.Interrupt, syscall.SIGTERM)
+	ctx, cancel := context.WithCancel(context.Background())
+
+	go func() {
+		select {
+		case <-interruptChan:
+			cancel()
+			// Complete progress bar elegantly
+			bar.Finish()
+			fmt.Println("\nBye!")
+			os.Exit(0)
+		case <-ctx.Done():
+			return
+		}
+	}()
+
+	// Make sure we clean up signal handlers at the end
+	defer func() {
+		signal.Stop(interruptChan)
+		cancel()
+	}()
+
 	// Start progress bar
 	bar.Start()
 
@@ -375,8 +403,13 @@ func scanLevel(
 	go func() {
 		for _, target := range toScan {
 			for _, word := range wordlist {
-				subdomain := word + "." + target
-				subdomainChan <- subdomain
+				select {
+				case <-ctx.Done():
+					return // Exit if interrupted
+				default:
+					subdomain := word + "." + target
+					subdomainChan <- subdomain
+				}
 			}
 		}
 		close(subdomainChan)
